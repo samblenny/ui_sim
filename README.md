@@ -1,4 +1,7 @@
 # ui_sim
+
+![ui_sim demo screenshot](ui_sim_demo.jpg)
+
 user interface simulator for a handheld multilingual communication device
 
 
@@ -14,15 +17,14 @@ user interface simulator for a handheld multilingual communication device
 
 5. Load http://127.0.0.1:8000 in a browser that supports modern javascript APIs
 
-6. Open the developer tools console so you can see javascript log messages
+6. [Optional] Open the developer tools so you can see javascript log messages
 
 7. Click the big green "Connect to ui-sim (localhost:8000)" button
 
-8. Type stuff... you should see keydown and keyup events in the javascript
-   console and in the terminal window where ui_sim is running. These are
-   tracing a simulation of data flow from a hardware keyboard ISR, into a
-   microkernel, then through a keyboard driver, application program, and
-   graphics user interface toolkit. [simulation is lo-fi... imagination helps]
+8. Type stuff... you should see a trace of event messages simulating data
+   flow from a hardware keyboard ISR, into a microkernel, then through a
+   keyboard driver, application program, and graphics user interface toolkit.
+   [simulation is lo-fi... imagination helps]
 
 9. When you are done, click the big red "Hang Up" button in the browser,
    and do a control-c in the terminal to stop ui_sim
