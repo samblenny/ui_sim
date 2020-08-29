@@ -7,14 +7,16 @@ h1,h2{margin:8px 0 3px 3px;font-size:1em;}
 ol,ul{padding-left:2.5em;}
 .h{visibility:hidden;}
 .sm{font-size:0.75em;}
-#left,#main,#right,p{padding:5px 10px;}
-main{border:4.5px solid #ccc;background:#f5f5f5;}
+#left,#main,#right{padding:5px 10px;}
+p{padding:0 10px;}
+main{border:4.5px solid #ccc;}
 header{grid-area:H;}
 #left{grid-area:L;}
-#right{grid-area:R;}
+#right{grid-area:R;overflow:auto;border-radius:14px;background:#eee;margin:0 5px;}
+#right p{font-size:14px;line-height:19px;}
 footer{grid-area:F;}
 main{grid-area:M;overflow:auto;border-radius:14px;background:#fff;}
-body{display:grid;grid:". H ." min-content "L M R" minmax(11em,2fr) ". F ." 1fr / 1fr minmax(auto,640px) 1fr;}
+body{display:grid;grid:". H R" auto "L M R" minmax(11em,2fr) ". F R" 1fr / 1fr minmax(auto,640px) 1fr;}
 header{display:flex; align-items:baseline;}
 header :first-child{margin-right:auto;}
 #connectBtn{

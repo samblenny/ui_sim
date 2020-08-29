@@ -6,7 +6,7 @@ use std::thread;
 
 mod http;
 mod mq;
-use mq::{EventLoopTx, EventLoopRx, SseRx};
+use mq::{EventLoopRx, EventLoopTx, Message, SseRx};
 
 const WEB_SERVER_BIND: &str = "127.0.0.1:8000";
 const WEB_SERVER_THREADS: usize = 3;
@@ -44,32 +44,53 @@ fn main() {
         });
     }
     // Start event loop
-    event_loop(in_rx as EventLoopRx, in_tx as EventLoopTx, &mut loop_to_server_mqs);
+    event_loop(
+        in_rx as EventLoopRx,
+        in_tx as EventLoopTx,
+        &mut loop_to_server_mqs,
+    );
 }
 
 /// Event loop for main thread
 fn event_loop(in_rx: EventLoopRx, in_tx: EventLoopTx, mqs_to_servers: &mut Vec<mq::Mq>) {
+    let loopback = |msg| {
+        let _ = in_tx.send(msg);
+    };
     for message in in_rx.iter() {
         match message {
-            mq::Message::LogError(msg) => println!("Err: {}", msg),
-            mq::Message::LogInfo(msg) => println!("{}", msg),
+            mq::Message::LogError(msg) => println!("ERR: {}", msg),
+            mq::Message::LogInfo(msg) => println!("INFO: {}", msg),
             mq::Message::KbdScanCode(sc) => {
-                let _ = in_tx.send(mq::Message::Repaint(format!("text: {}", sc)));
-                println!("Keyscan: {}", sc);
+                // TODO: route to keyboard driver
+                loopback(Message::KbdUnicode(sc.clone()));
+                loopback(Message::RemoteTrace(format!("KbdScanCode {}", sc)));
+                println!("KbdScanCode: {}", sc);
             }
-            mq::Message::Repaint(msg) => {
+            mq::Message::KbdUnicode(text) => {
+                // TODO: route to UI view controller
+                loopback(Message::RemoteTerm(text.clone()));
+                loopback(Message::RemoteTrace(format!("KbdUnicode {}", text)));
+                println!("KbdUnicode: {}", text);
+            }
+            mq::Message::RemoteTrace(msg) => {
                 for mq in mqs_to_servers.iter_mut() {
-                    mq.send(mq::Message::Repaint(msg.clone()));
+                    mq.send(mq::Message::RemoteTrace(msg.clone())); // to webserver SSE
                 }
-                println!("Repaint: {:?}", msg);
+                println!("RemoteTrace: {}", msg);
+            }
+            mq::Message::RemoteTerm(msg) => {
+                for mq in mqs_to_servers.iter_mut() {
+                    mq.send(mq::Message::RemoteTerm(msg.clone())); // to webserver SSE
+                }
+                println!("RemoteTerm: {}", msg);
             }
             mq::Message::TxReady(ready, tid) => {
                 for mq in mqs_to_servers.iter_mut() {
                     if mq.tid() == tid {
-                        mq.set_tx_ready(ready)
+                        mq.set_tx_ready(ready);
                     }
                 }
-                println!("TxReady(ready:{},tid:{})", ready, tid);
+                println!("TxReady: {} {}", ready, tid);
             }
         }
     }
@@ -198,7 +219,7 @@ fn handle_io_screen(mut r: &mut http::Request, mut sse_mq: &mut SseRx) {
 /// Handle POST request for a keyboard scancode
 fn handle_io_scancode(mut r: &mut http::Request, scancode: &str) {
     if scancode.len() == 4 {
-        r.mq.kbd_driver(scancode);
+        r.mq.kbd_scancode(scancode);
         http::send_200(&mut r, http::TEXT_PLAIN, &"OK");
     } else {
         http::send_400(&mut r, &"Bad Scancode");

@@ -1,5 +1,4 @@
 //! Provides channel message queue communciation for coordinating threads
-#![allow(dead_code)]
 use std::sync::mpsc::{Receiver, Sender};
 
 /// Message types
@@ -8,7 +7,9 @@ pub enum Message {
     LogError(String),
     LogInfo(String),
     KbdScanCode(String),
-    Repaint(String),
+    KbdUnicode(String),
+    RemoteTrace(String),
+    RemoteTerm(String),
     TxReady(bool, u32),
 }
 
@@ -45,8 +46,8 @@ impl Mq {
             let _ = self.tx.send(msg);
         }
     }
-    /// Send keyboard scancode message to keyboard driver sink
-    pub fn kbd_driver(&self, scancode: &str) {
+    /// Send keyboard scancode message to keyboard scancode sink
+    pub fn kbd_scancode(&self, scancode: &str) {
         self.send(Message::KbdScanCode(String::from(scancode)));
     }
     /// Send string to the error log sink
@@ -56,10 +57,6 @@ impl Mq {
     /// Send string to the info log sink
     pub fn info(&self, message: &str) {
         self.send(Message::LogInfo(String::from(message)));
-    }
-    /// Send drawing commands to screen repaint sink
-    pub fn repaint(&self, message: &str) {
-        self.send(Message::Repaint(String::from(message)));
     }
     /// Send flow control status to tx_ready sink.
     /// Subtle point: Possible confusion here about point of view. tx_ready()

@@ -1,6 +1,6 @@
 //! Multi-threaded HTTP server Request struct and send_* response functions
 use crate::mq;
-use crate::mq::SseRx;
+use crate::mq::{Message, SseRx};
 use std::io::Write;
 use std::net::TcpStream;
 
@@ -78,10 +78,14 @@ Access-Control-Allow-Origin: *\r\n\r\n";
             let _ = r.stream.flush();
             // Pipe events from sse_rx channel to TcpStream using SSE protocol
             r.mq.tx_ready(true);
-            for event in sse_rx.iter() {
-                r.mq.info(&format!("SSE: data: {:?}", event));
-                if let Err(e) = write!(r.stream, "data: {:?}\n\n", event) {
-                    r.mq.error(&format!("SSE: HTTP connection dropped [{:?}]", e));
+            for msg in sse_rx.iter() {
+                let s = match msg {
+                    Message::RemoteTrace(text) => format!("event: trace\ndata: {}", text),
+                    Message::RemoteTerm(text) => format!("event: term\ndata: {}", text),
+                    _ => format!("event: debug\ndata: {:?}", msg),
+                };
+                if let Err(e) = write!(r.stream, "{}\n\n", s) {
+                    r.mq.error(&format!("SSE: HTTP connection [{:?}]", e));
                     break;
                 }
                 let _ = r.stream.flush();
@@ -98,7 +102,10 @@ pub fn send_200(r: &mut Request, content_type: &str, body: &str) {
     let con_type = &format!("Content-Type: {}", content_type);
     let con_len = &format!("Content-Length: {}", body.len());
     let cors = &"Access-Control-Allow-Origin: *";
-    let header = format!("HTTP/1.1 200\r\n{}\r\n{}\r\n{}\r\n\r\n", con_type, con_len, cors);
+    let header = format!(
+        "HTTP/1.1 200\r\n{}\r\n{}\r\n{}\r\n\r\n",
+        con_type, con_len, cors
+    );
     // Omit body for HEAD method
     let body_maybe = match r.method {
         "HEAD" => &"",
