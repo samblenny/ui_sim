@@ -4,6 +4,9 @@ use crate::mq::SseRx;
 use std::io::Write;
 use std::net::TcpStream;
 
+/// Content type for plain text
+pub const TEXT_PLAIN: &str = "text/plain;charset=utf-8";
+
 /// Request: For passing context around while handling HTTP requests
 pub struct Request<'a> {
     pub mq: &'a mq::Mq,
@@ -56,7 +59,8 @@ pub fn send_file(mut r: &mut Request, name: &str) {
 
 /// Pipe message queue to TcpStream with HTTP Server-Sent Events protocol
 pub fn pipe_mq_rx_to_sse(mut r: &mut Request, sse_rx: &mut SseRx) {
-    let header = &"HTTP/1.1 200\r\nContent-Type: text/event-stream;charset=utf-8\r\n\r\n";
+    let header = &"HTTP/1.1 200\r\nContent-Type: text/event-stream;charset=utf-8\r\n\
+Access-Control-Allow-Origin: *\r\n\r\n";
     match r.method {
         "HEAD" => {
             r.mq.info(&format!("HTTP200: {} {} [SSE]", r.method, r.path));
@@ -93,7 +97,8 @@ pub fn send_200(r: &mut Request, content_type: &str, body: &str) {
     r.mq.info(&format!("HTTP200: {} {} {}", r.method, r.path, r.query));
     let con_type = &format!("Content-Type: {}", content_type);
     let con_len = &format!("Content-Length: {}", body.len());
-    let header = format!("HTTP/1.1 200\r\n{}\r\n{}\r\n\r\n", con_type, con_len);
+    let cors = &"Access-Control-Allow-Origin: *";
+    let header = format!("HTTP/1.1 200\r\n{}\r\n{}\r\n{}\r\n\r\n", con_type, con_len, cors);
     // Omit body for HEAD method
     let body_maybe = match r.method {
         "HEAD" => &"",

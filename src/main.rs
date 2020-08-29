@@ -199,7 +199,7 @@ fn handle_io_screen(mut r: &mut http::Request, mut sse_mq: &mut SseRx) {
 fn handle_io_scancode(mut r: &mut http::Request, scancode: &str) {
     if scancode.len() == 4 {
         r.mq.kbd_driver(scancode);
-        http::send_200(&mut r, &".txt", &"OK");
+        http::send_200(&mut r, http::TEXT_PLAIN, &"OK");
     } else {
         http::send_400(&mut r, &"Bad Scancode");
     }
