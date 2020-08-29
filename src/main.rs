@@ -23,13 +23,13 @@ const WEB_SERVER_THREADS: usize = 3;
 ///    ownership of Senders. Receivers are moved to server threads.
 fn main() {
     // Create shared inbound channel and webserver listener
-    let (in_tx, in_rx) = mpsc::channel::<mq::Message>();
+    let (in_tx, in_rx) = mpsc::channel::<Message>();
     let listener = TcpListener::bind(WEB_SERVER_BIND).unwrap();
     // For each server thread...
     let mut loop_to_server_mqs = Vec::<mq::Mq>::new();
     for tid in 0..WEB_SERVER_THREADS {
         // Create outbound channel for this thread
-        let (out_tx, out_rx) = mpsc::channel::<mq::Message>();
+        let (out_tx, out_rx) = mpsc::channel::<Message>();
         let loop_mq = mq::Mq::new(out_tx, false, tid as u32);
         loop_to_server_mqs.push(loop_mq);
         // Clone shared inbound Sender and webserver listener
@@ -58,33 +58,33 @@ fn event_loop(in_rx: EventLoopRx, in_tx: EventLoopTx, mqs_to_servers: &mut Vec<m
     };
     for message in in_rx.iter() {
         match message {
-            mq::Message::LogError(msg) => println!("ERR: {}", msg),
-            mq::Message::LogInfo(msg) => println!("INFO: {}", msg),
-            mq::Message::KbdScanCode(sc) => {
+            Message::LogError(msg) => println!("ERR: {}", msg),
+            Message::LogInfo(msg) => println!("{}", msg),
+            Message::KbdScanCode(sc) => {
                 // TODO: route to keyboard driver
                 loopback(Message::KbdUnicode(sc.clone()));
                 loopback(Message::RemoteTrace(format!("KbdScanCode {}", sc)));
                 println!("KbdScanCode: {}", sc);
             }
-            mq::Message::KbdUnicode(text) => {
+            Message::KbdUnicode(text) => {
                 // TODO: route to UI view controller
                 loopback(Message::RemoteTerm(text.clone()));
                 loopback(Message::RemoteTrace(format!("KbdUnicode {}", text)));
                 println!("KbdUnicode: {}", text);
             }
-            mq::Message::RemoteTrace(msg) => {
+            Message::RemoteTrace(msg) => {
                 for mq in mqs_to_servers.iter_mut() {
-                    mq.send(mq::Message::RemoteTrace(msg.clone())); // to webserver SSE
+                    mq.send(Message::RemoteTrace(msg.clone())); // to webserver SSE
                 }
                 println!("RemoteTrace: {}", msg);
             }
-            mq::Message::RemoteTerm(msg) => {
+            Message::RemoteTerm(msg) => {
                 for mq in mqs_to_servers.iter_mut() {
-                    mq.send(mq::Message::RemoteTerm(msg.clone())); // to webserver SSE
+                    mq.send(Message::RemoteTerm(msg.clone())); // to webserver SSE
                 }
                 println!("RemoteTerm: {}", msg);
             }
-            mq::Message::TxReady(ready, tid) => {
+            Message::TxReady(ready, tid) => {
                 for mq in mqs_to_servers.iter_mut() {
                     if mq.tid() == tid {
                         mq.set_tx_ready(ready);

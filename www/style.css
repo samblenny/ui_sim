@@ -12,12 +12,12 @@ p{padding:0 10px;}
 main{border:4.5px solid #ccc;}
 header{grid-area:H;}
 #left{grid-area:L;}
-#right{grid-area:R;overflow:auto;border-radius:14px;background:#eee;margin:0 5px;}
+#right{grid-area:R;overflow:auto;border-radius:14px;background:#eee;margin:15px 15px;}
 #right p{font-size:14px;line-height:19px;}
 footer{grid-area:F;}
 main{grid-area:M;overflow:auto;border-radius:14px;background:#fff;}
 body{display:grid;grid:". H R" auto "L M R" minmax(11em,2fr) ". F R" 1fr / 1fr minmax(auto,640px) 1fr;}
-header{display:flex; align-items:baseline;}
+header{display:flex; align-items:baseline;margin:15px 0px 5px 10px;}
 header :first-child{margin-right:auto;}
 #connectBtn{
     background:#e66;border:4px solid #e22;
