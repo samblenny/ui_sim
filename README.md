@@ -1,5 +1,5 @@
 # ui_sim
-user interface simulator for a handheld multi-lingual communication device
+user interface simulator for a handheld multilingual communication device
 
 
 ## Quick Start
@@ -22,7 +22,7 @@ user interface simulator for a handheld multi-lingual communication device
    console and in the terminal window where ui_sim is running. These are
    tracing a simulation of data flow from a hardware keyboard ISR, into a
    microkernel, then through a keyboard driver, application program, and
-   graphics user interface toolkit. [sim is lo-fi... imagination helps]
+   graphics user interface toolkit. [simulation is lo-fi... imagination helps]
 
 9. When you are done, click the big red "Hang Up" button in the browser,
    and do a control-c in the terminal to stop ui_sim
@@ -32,7 +32,7 @@ user interface simulator for a handheld multi-lingual communication device
 
 This is a simulation of a handheld device running a microkernel with channel
 based IPC. The main point is to experiment with user experience around keyboard
-drivers for multi-lingual hardware keyboards (i.e. play with state machines).
+drivers for multilingual hardware keyboards (i.e. play with state machines).
 
 The keyboard and screen portion of the simulation uses HTML/CSS/JS/SVG with
 browser fetch and EventSource APIs for communicating with the rust code.
