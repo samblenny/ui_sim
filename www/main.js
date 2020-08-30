@@ -35,7 +35,7 @@ function stop() {
     }
     // Update header and connection button
     h1.textContent = "No connection";
-    connectBtn.textContent = "Connect to ui-sim (localhost:8000)";
+    connectBtn.textContent = "Connect to ui_sim (localhost:8000)";
     connectBtn.classList.add("stopped");
 }
 
@@ -44,7 +44,7 @@ function start() {
     if (serverEvents) {
         serverEvents.close();
     }
-    // Start a new Server-Sent Events connection (events from ui-sim)
+    // Start a new Server-Sent Events connection (events from ui_sim)
     serverEvents = new EventSource('/io/screen');
     serverEvents.addEventListener('open', e => {
         appendDebug('SSE /io/screen connected');
@@ -69,10 +69,10 @@ function start() {
         console.log('SSE /io/screen network error');
         stop();
     });
-    // Start POSTing keyboard up and down events to ui-sim at scancode URL
+    // Start POSTing keyboard up and down events to ui_sim at scancode URL
     bkbd.addKeyboardListener(document, scancodeURL);
     // Update header and connection button
-    h1.textContent = "Connected to ui-sim (localhost:8000)";
+    h1.textContent = "Connected to ui_sim (localhost:8000)";
     connectBtn.textContent = "Hang Up";
     connectBtn.classList.remove("stopped");
 }

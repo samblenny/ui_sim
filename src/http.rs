@@ -57,8 +57,8 @@ pub fn send_file(mut r: &mut Request, name: &str) {
     }
 }
 
-/// Pipe message queue to TcpStream with HTTP Server-Sent Events protocol
-pub fn pipe_mq_rx_to_sse(mut r: &mut Request, sse_rx: &mut SseRx) {
+/// Pipe events from event loop channel to TcpStream with HTTP Server-Sent Events protocol
+pub fn send_sse_piped_events(mut r: &mut Request, sse_rx: &mut SseRx) {
     let header = &"HTTP/1.1 200\r\nContent-Type: text/event-stream;charset=utf-8\r\n\
 Access-Control-Allow-Origin: *\r\n\r\n";
     match r.method {

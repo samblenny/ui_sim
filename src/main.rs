@@ -213,7 +213,7 @@ fn handle_route(mut r: &mut http::Request, mut sse_rx: &mut SseRx) {
 /// pipe messages received from message queue to a long-lived connection that
 /// follows HTTP SSE protocol and generates javascript events on client side.
 fn handle_io_screen(mut r: &mut http::Request, mut sse_mq: &mut SseRx) {
-    http::pipe_mq_rx_to_sse(&mut r, &mut sse_mq);
+    http::send_sse_piped_events(&mut r, &mut sse_mq);
 }
 
 /// Handle POST request for a keyboard scancode

@@ -70,7 +70,7 @@ impl Mq {
     pub fn tid(&self) -> u32 {
         self.tid
     }
-    /// Update self.tx_ready (intende for responding to Message::TxReady)
+    /// Update self.tx_ready (intended for responding to Message::TxReady)
     pub fn set_tx_ready(&mut self, ready: bool) {
         self.tx_ready = ready;
     }
