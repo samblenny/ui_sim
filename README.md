@@ -19,7 +19,7 @@ user interface simulator for a handheld multilingual communication device
 
 6. [Optional] Open the developer tools so you can see javascript log messages
 
-7. Click the big green "Connect to ui-sim (localhost:8000)" button
+7. Click the big green "Connect to ui_sim (localhost:8000)" button
 
 8. Type stuff... you should see a trace of event messages simulating data
    flow from a hardware keyboard ISR, into a microkernel, then through a
