@@ -1,0 +1,73 @@
+#                        P2
+#                    P5  PC  P6
+#    P3       P4         P9         P7       P8
+#
+# P13  P14  P15  P16  P17  P18  P19  P20  P21  P22
+#
+# P23  P24  P25  P26  P27  P28  P29  P30  P31  P32
+#
+# P33  P34  P35  P36  P37  P38  P39  P40  P41  P42
+#
+# P43  P44  P45  P46  P47  P48  P49  P50  P51  P52
+#
+#     P53  P54  P55_____P55____P55  P56  P57
+#
+# Notes: Dead¨ on AltL-v, NBSP on AltR-Space,
+#   less-than/greater-than on w/x (not single guillemet),
+#   missing & uppercase diacritics could go on Sym picker
+#
+Scan	Base	Shift	AltL	AltR	ShiftAltR	Hold
+P2_	Up					
+P5_	Left					
+PC_	Click					
+P6_	Right					
+P3_	F1			Tab		Power
+P4_	F2					
+P9_	Down					
+P7_	F3					
+P8_	F4		Ctrl			Power
+P13	1		§	à		
+P14	2			é		
+P15	3			è	È	
+P16	4			ê	Ê	
+P17	5		[	(		
+P18	6		]	)		
+P19	7			&		
+P20	8		_	*		
+P21	9		'	«		
+P22	0		"	»		
+P23	a	A		æ	Æ	
+P24	z	Z		£		
+P25	e	E		€		
+P26	r	R		Dead`		
+P27	t	T		{		
+P28	y	Y		}		
+P29	u	U		ù	Ù	
+P30	i	I		ï	Ï	
+P31	o	O		œ	Œ	
+P32	p	P		%		
+P33	q	Q		@		
+P34	s	S		ß		
+P35	d	D		$		
+P36	f	F		¤		
+P37	g	G		µ		
+P38	h	H		-		
+P39	j	J		+		
+P40	k	K	\	/		
+P41	l	L		|		
+P42	m	M		#		
+P43	ShiftL			Backspace		
+P44	w	W		<		
+P45	x	X		>		
+P46	c	C		ç	Ç	
+P47	v	V	Dead¨	Dead^		
+P48	b	B		=		
+P49	n	N		Dead~		
+P50	:		¿	?		
+P51	;		¡	!		
+P52	ShiftR		Enter			
+P53	AltL					
+P54	,			Sym		
+P55	Space			NBSP		
+P56	.			Emoji		
+P57	AltR					
