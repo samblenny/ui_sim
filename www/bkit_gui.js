@@ -1,0 +1,350 @@
+"use strict";
+// bkit_gui provides a stack-oriented interpreted language for drawing, including:
+// - VM opcodes to do integer math, draw shapes, and render text
+// - Syntax for defining functions, utf8 strings, and bitmaps
+
+// Token types (intended to work like Rust enum variants)
+class TString   {constructor(v) {this.v=v;}}
+class TBitmap   {constructor(v) {this.v=v;}}
+class TInteger  {constructor(v) {this.v=v;}}
+class TOpcode   {constructor(v) {this.v=v;}}
+class TSymbol   {constructor(v) {this.v=v;}}
+
+// Interpreter and VM state for parser, stack, and registers
+class StackMachineContext {
+    constructor(code, svg) {
+        // Clean out previous contents of SVG target element (clear the screen)
+        while(svg.firstChild) {
+            svg.removeChild(svg.firstChild);
+        }
+        // Parser state
+        this.code = code;                 // Input buffer
+        this.i = 0;                       // Index to current position in input
+        this.maxIndex = code.length - 1;  // Index to end of input
+        this.error = null;
+        // VM state
+        this.svg = svg         // Screen
+        this.stack = [];       // Stack
+        this.x = 0;            // Current x coordinate
+        this.y = 0;            // Current y coordinate
+        this.markX = 0;        // Marked x coordinate
+        this.markY = 0;        // Marked Y coordinate
+        this.stroke = 1;       // 0:none, 1:blk, 2:wht
+        this.fill = 0;         // 0:none, 1:blk, 2:wht
+        this.radius = 0;       // Current corner radius for rectangles
+        this.traceOn = false;  // Debug tracing: true=enabled
+        this.fnDefs = {};      // Function definitions
+    }
+
+    // Add a defined function
+    defineFn(name, words) {this.fnDefs[name] = words;}
+
+    // Stack push
+    push(val) {if (val) {this.stack.push(val);}}
+
+    // Stack pop
+    pop() {return this.stack.pop();}
+
+    // Get character from code buffer
+    charAt(index) {return this.code[index];}
+
+    // Remember message for parsing error
+    setError(errMsg) {if (!this.error) {this.error=errMsg;}}
+
+    // Return string slice around where a parsing error occured
+    codeAroundError(startOfDef, problemIndex) {
+        const range = 20;
+        let before = Math.max(0, startOfDef-range);
+        let after = Math.min(this.maxIndex, problemIndex);
+        return this.code.slice(before, after);
+    }
+
+    // Send info message to console log if trace level is high enough
+    traceInfo(message, object) {
+        if (this.traceLevel >= 1) {
+            let stack = this.stack.map(n => n.v);
+            let registers = {x: this.x, y: this.y};
+            console.log(registers, stack, message, object);
+        }
+    }
+
+    // Send debug message to console log if trace level is high enough
+    traceDebug(message, object) {
+        if (this.traceLevel >= 2) {
+            let stack = this.stack.map(n => n.v);
+            let registers = {x: this.x, y: this.y};
+            console.log(registers, stack, message, object);
+        }
+    }
+}
+
+// Stack machine VM opcodes
+const opcodes = {
+    "+":       (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(new TInteger(s.v + t.v));},
+    "-":       (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(new TInteger(s.v - t.v));},
+    "*":       (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(new TInteger(s.v * t.v));},
+    "shr":     (vm) => {let t=vm.pop(); vm.push(new TInteger(t.v >> 1));},
+    "dup":     (vm) => {let t=vm.pop(); vm.push(t); vm.push(t);},
+    "drop":    (vm) => {vm.pop();},
+    "swap":    (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(t); vm.push(s);},
+    "over":    (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(s); vm.push(t); vm.push(s);},
+    "+xy":     (vm) => {let t=vm.pop(), s=vm.pop(); vm.x+=s.v; vm.y+=t.v;},
+    "goxy":    (vm) => {let t=vm.pop(), s=vm.pop(); vm.x=s.v; vm.y=t.v;},
+    "mark":    (vm) => {vm.markX=vm.x.v; vm.markY=vm.y.v;},
+    "gomark":  (vm) => {vm.x=vm.markX; vm.y=vm.markY;},
+    "stroke":  (vm) => {vm.stroke=vm.pop().v;},
+    "fill":    (vm) => {vm.fill=vm.pop().v;},
+    "txtC":    (vm) => {let txt=vm.pop().v; textC(vm, txt);},
+    "txtL":    (vm) => {let txt=vm.pop().v; textL(vm, txt);},
+    "radius":  (vm) => {vm.radius=vm.pop().v;},
+    "rect":    (vm) => {let dn=vm.pop(), rt=vm.pop(); rect(vm, rt.v, dn.v);},
+    "image":   (vm) => {let h=vm.pop(), w=vm.pop(), bits=vm.pop(); image(vm, bits.v, w.v, h.v);},
+    "trace":   (vm) => {let t=vm.pop(); vm.traceLevel=t.v;},
+    "nop":     (vm) => {}, // No effect, but useful for tracing
+};
+
+// SVG namespace is required to make document.createElementNS work for SVG
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// Draw rectangle to VM screen
+function rect(vm, rt, dn) {
+    let r = document.createElementNS(SVG_NS, 'rect');
+    if (vm.stroke > 0) {
+        // compensate for SVG stroke going half outside of bounding box
+        r.setAttribute('x', `${vm.x}.5`);
+        r.setAttribute('y', `${vm.y}.5`);
+        r.setAttribute('width', rt-1);
+        r.setAttribute('height', dn-1);
+    } else {
+        r.setAttribute('x', `${vm.x}.5`);
+        r.setAttribute('y', `${vm.y}.5`);
+        r.setAttribute('width', rt-1);
+        r.setAttribute('height', dn-1);
+    }
+    r.setAttribute('class', `s${vm.stroke} f${vm.fill}`);
+    vm.svg.appendChild(r);
+    vm.traceInfo('rect:', r);
+}
+
+// Draw centered text to VM screen
+// Take text color (fill:#...) from stroke value, taking it as foreground color
+function textC(vm, text) {
+    let tc = document.createElementNS(SVG_NS, 'text');
+    tc.setAttribute('x', vm.x);
+    tc.setAttribute('y', vm.y);
+    tc.setAttribute('class', `tc f${vm.stroke}`);
+    tc.textContent = text;
+    vm.svg.appendChild(tc);
+    vm.traceInfo('textC:"', tc);
+}
+
+// Draw left aligned text to VM screen
+function textL(vm, text) {
+    let tl = document.createElementNS(SVG_NS, 'text');
+    tl.setAttribute('x', vm.x);
+    tl.setAttribute('y', vm.y);
+    tl.setAttribute('class', `tl f${vm.stroke}`);
+    tl.textContent = text;
+    vm.svg.appendChild(tl);
+    vm.traceInfo('textL:', tl);
+}
+
+// Draw bitmap image to VM screen
+function image(vm, bits, w, h) {
+    let pixelGroup = document.createElementNS(SVG_NS, 'g');
+    pixelGroup.setAttribute('class', `s0 f1`);
+    for (let y=0; y<h; y++) {
+        for (let x=0; x<w; x++) {
+            if (bits[y*w+x]==1) {
+                let pixel = document.createElementNS(SVG_NS, 'rect');
+                pixel.setAttribute('x', vm.x + x);
+                pixel.setAttribute('y', vm.y + y);
+                pixel.setAttribute('width', 1);
+                pixel.setAttribute('height', 1);
+                pixelGroup.appendChild(pixel);
+            }
+        }
+    }
+    vm.svg.appendChild(pixelGroup);
+    vm.traceInfo('image:', pixelGroup);
+}
+
+// Interpret code string and render the results to an SVG element
+export function run(code, svgElement) {
+    // Interpret code
+    let vm = new StackMachineContext(code, svgElement);
+    for (vm.i=0; vm.i<=vm.maxIndex && !vm.error; vm.i++) {
+        let c = vm.charAt(vm.i);
+        if      (c === "#") {
+            consumeComment(vm);                  // Comment
+        } else if (" \t\r\n".includes(c)) {
+            ;                                    // Whitespace (ignore it)
+        } else if (c === "(") {
+            vm.push(compileStringDef(vm));       // String
+        } else if (c === "<") {
+            vm.push(compileBitmapDef(vm));       // Bitmap
+        } else if (c === ":") {
+            compileFunctionDef(vm);              // Function
+        } else {
+            // Tokens reaching this branch should be number, symbol, or opcode
+            let w = collectWord(vm);
+            evalWord(vm, w, 0);
+        }
+    }
+    if (vm.error) {
+        console.error("bkit error:", vm.error);
+    }
+}
+
+// Skip over Comment, consuming characters until end of line
+function consumeComment(vm) {
+    for (/* nop */; vm.i<=vm.maxIndex; vm.i++) {
+        let c = vm.charAt(vm.i);
+        if (c==="\n" || c==="\r" || vm.i===vm.maxIndex) {
+            return;
+        }
+    }
+}
+
+// Compile String definition, consuming chars until first unescaped ')'
+// Escape char is '\', so "\)" collects as ')'
+function compileStringDef(vm) {
+    let strBuf=[], iOrig=vm.i;
+    for (vm.i++; vm.i<=vm.maxIndex; vm.i++) {
+        let c = vm.charAt(vm.i);
+        if (c==="\\" && vm.i<vm.maxIndex) {        // Collect escaped char
+            vm.i++;
+            let escapedC = vm.charAt(vm.i);
+            strBuf.push(escapedC);
+        } else if (c === ")") {                    // End of string
+            return new TString(strBuf.join(""));
+        } else {                                   // Collect regular char
+            strBuf.push(c);
+        }
+    }
+    // Bad syntax: Unclosed string, missing ')'
+    let codeContext = vm.codeAroundError(iOrig, iOrig+40);
+    vm.setError("string: missing ')': " + codeContext);
+    return null;
+}
+
+// Compile Bitmap definition, consuming bit characters until '>'
+function compileBitmapDef(vm) {
+    let bitBuf=[], iOrig=vm.i;
+    for (vm.i++; vm.i<=vm.maxIndex; vm.i++) {
+        let c = vm.charAt(vm.i);
+        if(c==="0" || c==="1") {
+            bitBuf.push(c);                               // Collect bit
+        } else if (c.match(/^[ \t\r\n]$/)) {
+            continue;                                 // Skip whitespace
+        } else if (c===">") {
+            return new TBitmap(bitBuf);                 // End of bitmap
+        } else {
+            // Bad char in bitmap (not 0, 1, or whitespace)
+            let codeContext = vm.codeAroundError(iOrig, vm.i);
+            vm.setError("bitmap: syntax error: " + codeContext);
+            return null;
+        }
+    }
+    // Bad syntax: Unclosed bitmap, missing '>'
+    let codeContext = vm.codeAroundError(iOrig, iOrig+40);
+    vm.setError("bitmap: missing '>': " + codeContext);
+    return null;
+}
+
+// Function definition: consume chars and collect words until ';'
+function compileFunctionDef(vm) {
+    let words=[], iOrig=vm.i;
+    for (vm.i++; vm.i<=vm.maxIndex; vm.i++) {
+        let c = vm.charAt(vm.i);
+        if (c === "#") {                          // Comment
+            consumeComment(vm);
+        } else if (" \t\r\n".includes(c)) {       // Whitespace
+            ;
+        } else if (c === "(") {                   // String
+            let str = compileStringDef(vm);
+            words.push(str);
+        } else if (c === "<") {                   // Bitmap
+            let bits = compileBitmapDef(vm);
+            words.push(bits);
+        } else if (c === ";") {                   // End function def
+            let name = words.shift();
+            vm.traceDebug(`: ${name.v} ... ; = `, words);
+            if (name) {
+                vm.defineFn(name.v, words);
+            } else {
+                let codeContext = vm.codeAroundError(iOrig, vm.i);
+                vm.setError("function: missing function name: " + codeContext);
+            }
+            return;
+        } else {                                  // Int, name, or opcode
+            let other = collectWord(vm);
+            words.push(other);
+        }
+    }
+    // Bad syntax: Unclosed function, missing ';'
+    let codeContext = vm.codeAroundError(iOrig, iOrig+40);
+    vm.setError("function: missing ';': " + codeContext);
+    return;
+}
+
+// Collect integer, name, or opcode, consuming chars until first whitespace
+function collectWord(vm) {
+    let wordBuf=[], iOrig=vm.i;
+    for (/* nop */; vm.i<=vm.maxIndex; vm.i++) {
+        let c = vm.charAt(vm.i);
+        if(vm.i===vm.maxIndex && !" \t\r\n".includes(c)) {
+            // Make sure not to truncate the last character of the input buffer
+            wordBuf.push(c);
+        }
+        if (" \t\r\n".includes(c) || vm.i===vm.maxIndex) {
+            // Whitespace or end of buffer means end of word, but what kind?
+            let w = wordBuf.join("");
+            if (w.match(/^-?[0-9]+$/)) {                             // Integer
+                return new TInteger(Number.parseInt(w));
+            } else if (w.match(/^[0-9]+\./)) {                // Bad: no floats
+                let codeContext = vm.codeAroundError(iOrig, vm.i);
+                vm.setError("Bad syntax: no floats: " + codeContext);
+                return null;
+            } else if (opcodes[w]) {                                  // Opcode
+                return new TOpcode(w);
+            } else {
+                return new TSymbol(w);          // Symbol (maybe function name)
+            }
+        } else {                    // Collect non-whitespace to form next word
+            wordBuf.push(c);
+        }
+    }
+    // Reaching here may mean there is no more input (an okay thing)
+    let codeContext = vm.codeAroundError(iOrig, iOrig+40);
+    vm.setError("collectWord: unexpected end of input: " + codeContext);
+    return null;
+}
+
+function evalWord(vm, word, callDepth) {
+    let maxDepth = 30;
+    if (callDepth >= maxDepth) {
+        console.warn("call stack too deep: "+word);
+    } else if (word instanceof TString || word instanceof TBitmap || word instanceof TInteger) {
+        // Strings, bitmaps, and integers get pushed to stack
+        vm.traceDebug('eval:', word);
+        vm.push(word);
+    } else if (word instanceof TOpcode) {
+        // Opcodes get invoked through the table of opcode function pointers
+        vm.traceDebug('eval:', word);
+        opcodes[word.v](vm);
+    } else if (word instanceof TSymbol) {
+        // Symbols get looked up... if they are functions, they get expanded and evaluated
+        vm.traceDebug('eval:', word);
+        let fnWords = vm.fnDefs[word.v];
+        if (fnWords) {
+            for (let w of fnWords) {
+                evalWord(vm, w, callDepth+1);
+            }
+        } else {
+            console.warn('eval of undefined symbol:', word);
+        }
+    } else {
+        console.warn('eval  ???:', word);
+    }
+}

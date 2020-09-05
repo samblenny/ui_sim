@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bkit</title><link rel="preload" href="bkit_gui.css" as="style">
+<link href="bkit_gui.css" rel="stylesheet"></head><body>
+<header>
+ <h1>bkit</h1>
+ <button id="backlightBtn">Backlight</button>
+ <label for="romPage">ROM Page:</label>
+ <select name="rom" id="romPage">
+  <option value="PaintFrame">PaintFrame</option>
+  <option value="Views">Views</option>
+  <option value="KbdAzerty">KbdAzerty</option>
+  <option value="KbdQwerty">KbdQwerty</option>
+  <option value="KbdCommon">KbdCommon</option>
+  <option value="Widgets">Widgets</option>
+  <option value="Sprites">Sprites</option>
+ </select>
+</header>
+
+<svg id="screen" width="336" height="536" viewbox="0 0 336 536"
+ version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg"></svg>
+
+<div id="triggers">
+  <h2>Event Triggers</h2>
+  <!-- event trigger buttons get injected here by script -->
+</div>
+
+<textarea id="editor" autocapitalize="none" autocomplete="off" spellcheck="false"></textarea>
+
+<div id="sprite">
+ <h2>Sprite Editor <span class="err"></span></h2>
+ <textarea id="spriteText" autocapitalize="none" autocomplete="off" spellcheck="false"></textarea>
+ <div class="grid">
+   <!-- 24x16 sprite editor pixel buttons get injected here by script -->
+ </div>
+</div>
+
+<div id="right">
+<table id="builtins">
+<tr>      <td>#</td> <td>Comment to end of line</td></tr>
+<tr><td>: w ... ;</td> <td>Define word w = ...</td></tr>
+<tr>   <td>-123</td> <td>Push number as T</td></tr>
+<tr>  <td>(...)</td> <td><pre class="prop">Compile ... as utf8 and push;
+spell '<code>\)</code>'&nbsp; for '<code>)</code>' and '<code>#</code>' for '<code>#</code>'</pre></td></tr>
+<tr><td><pre>&lt; 1100
+  0011 &gt</pre></td> <td><pre class="prop">Compile bits as bitmap
+and push</pre></td></tr>
+<tr>      <td>+</td> <td>S+=T; pop</td></tr>
+<tr>      <td>-</td> <td>S-=T; pop</td></tr>
+<tr>      <td>*</td> <td>S*=T; pop</td></tr>
+<tr>    <td>shr</td> <td>Shift right T&gt;&gt;=1</td></tr>
+<tr>    <td>dup</td> <td>Push T</td></tr>
+<tr>   <td>drop</td> <td>Pop T</td></tr>
+<tr>   <td>swap</td> <td>Swap T with S</td></tr>
+<tr>   <td>over</td> <td>Push S</td></tr>
+<tr>   <td>goxy</td> <td>Move x=S, y=T; pop 2</td></tr>
+<tr>    <td>+xy</td> <td>Move x+=S, y+=T; pop 2</td></tr>
+<tr>   <td>mark</td> <td>Save position as mark</td></tr>
+<tr> <td>gomark</td> <td>Move to mark</td></tr>
+<tr> <td>stroke</td> <td>Stroke=T: 0=no 1=b 2=w; pop</td></tr>
+<tr>   <td>fill</td> <td>Fill=T: 0=no 1=b 2=w; pop</td></tr>
+<tr>   <td>txtC</td> <td><pre class="prop">Draw text utf8=T using current
+xy as baseline center; pop</pre></td></tr>
+<tr>   <td>txtL</td> <td>As <code>txtC</code>, except baseline left</td></tr>
+<tr> <td>radius</td> <td>Rect radius=T; pop</td></tr>
+<tr>   <td>rect</td> <td><pre class="prop">Draw rect: from current xy,
+go S right and T down; pop 2</td></tr>
+<tr>  <td>image</td> <td><pre class="prop">Draw bitmap down and right
+from current xy; pop 3;
+stack: <code>&lt;</code>pixels<code>&gt;</code> wide=S high=T</td></tr>
+<tr>  <td>trace</td> <td><pre class="prop">Console log trace level=T:
+0:none 1:info 2:debug; pop</td></tr>
+<tr>    <td>nop</td> <td>Does nothing; good for tracing</td></tr>
+</table>
+</div>
+
+<script type="module" src="bkit_gui_main.js"></script>
+</body>
+</html>
