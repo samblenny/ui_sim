@@ -17,8 +17,8 @@ export const PaintFrame = `
 # - Global namespace, bindings eval at runtime
 
 # Edits here are temporary. Reloading browser
-# tab reverts changes. Editing bkit-rom.js is
-# the equivalent of re-flashing ROM.
+# tab reverts changes. Editing bkit_gui_rom.js
+# is the equivalent of re-flashing ROM.
 
 # To see effect of edits, try "Soft Reboot"
 # event trigger button at bottom left.
