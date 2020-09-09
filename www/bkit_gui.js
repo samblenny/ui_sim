@@ -414,12 +414,18 @@ function compileFunctionDef(vm) {
             words.push(bits);
         } else if (c === ";") {                   // End function def
             let name = words.shift();
-            if (name !== undefined ) {
-                vm.traceDebug(`: ${name.v} ... ; = `, words);
-                vm.defineFn(name.v, words);
-            } else {
+            if (name === undefined ) {
                 let codeContext = vm.codeAroundError(iOrig, vm.i+1);
                 vm.setError("function: missing function name: " + codeContext);
+            } else if (name instanceof TOpcode) {
+                let codeContext = vm.codeAroundError(iOrig, vm.i+1);
+                vm.setError(`function: cannot redefine keyword "${name.v}": ` + codeContext);
+            } else if (!(name instanceof TSymbol)) {
+                let codeContext = vm.codeAroundError(iOrig, vm.i+1);
+                vm.setError(`function: name cannot be number, <bitmap>, or (string): ` + codeContext);
+            } else {
+                vm.traceDebug(`: ${name.v} ... ; = `, words);
+                vm.defineFn(name.v, words);
             }
             return;
         } else {                                  // Int, name, or opcode
