@@ -61,49 +61,14 @@ export const KbdAzerty = `
 kSetStyle
 kNav
 kFKeys
-(1) P13
-(2) P14
-(3) P15
-(4) P16
-(5) P17
-(6) P18
-(7) P19
-(8) P20
-(9) P21
-(0) P22
-
-(A) P23
-(Z) P24
-(E) P25
-(R) P26
-(T) P27
-(Y) P28
-(U) P29
-(I) P30
-(O) P31
-(P) P32
-
-(Q) P33
-(S) P34
-(D) P35
-(F) P36
-(G) P37
-(H) P38
-(J) P39
-(K) P40
-(L) P41
-(M) P42
-
-()  P43  # ShL?
-(W) P44
-(X) P45
-(C) P46
-(V) P47
-(B) P48
-(N) P49
-(:) P50
-(;) P51
-()  P52  # ShR?
+(1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
+kRowOfTen
+(A) (Z) (E) (R) (T) (Y) (U) (I) (O) (P) P32
+kRowOfTen
+(Q) (S) (D) (F) (G) (H) (J) (K) (L) (M) P42
+kRowOfTen
+()  (W) (X) (C) (V) (B) (N) (:) (;) ()  P52
+kRowOfTen
 kBottomRow
 ;
 
@@ -111,49 +76,14 @@ kBottomRow
 kSetStyle
 kNav
 kFKeysAltL
-(§) P13
-() P14
-() P15
-() P16
-([) P17
-(]) P18
-() P19
-(_) P20
-(') P21
-(") P22
-
-() P23
-() P24
-() P25
-() P26
-() P27
-() P28
-() P29
-() P30
-() P31
-() P32
-
-() P33
-() P34
-() P35
-() P36
-() P37
-() P38
-() P39
-(\\\\) P40  # js needs multi-escape
-() P41
-() P42
-
-() P43
-() P44
-() P45
-() P46
-() P47
-() P48
-() P49
-(¿) P50
-(¡) P51
-() P52
+(§) () () () ([) (]) () (_)  (') (") P22
+kRowOfTen
+()  () () () ()  ()  () ()   ()  ()  P32
+kRowOfTen
+()  () () () ()  ()  () (\\\\) ()  ()  P42
+kRowOfTen
+()  () () () ()  ()  () (¿)  (¡) ()  P52
+kRowOfTen
 kBottomRowAltL
 ;
 
@@ -161,49 +91,14 @@ kBottomRowAltL
 kSetStyle
 kNav
 kFKeysAltR
-(à) P13
-(é) P14
-(è) P15
-(ê) P16
-(() P17
-(\\)) P18
-(&) P19
-(*) P20
-(«) P21
-(») P22
-
-(æ) P23
-(£) P24
-(€) P25
-(\`) P26
-({) P27
-(}) P28
-(ù) P29
-(ï) P30
-(œ) P31
-(%) P32
-
-(@) P33
-(ß) P34
-($) P35
-(¤) P36
-(µ) P37
-(-) P38
-(+) P39
-(/) P40
-(|) P41
-(#) P42
-
-(⌫ ) P43  # Backspace
-(<) P44
-(>) P45
-(ç) P46
-(^) P47
-(=) P48
-(~) P49
-(?) P50
-(!) P51
-(⏎ ) P52  # Return
+(à)  (é) (è) (ê) (() (\\)) (&) (*) («) (») P22
+kRowOfTen
+(æ)  (£) (€) (\`) ({) (})  (ù) (ï) (œ) (%) P32
+kRowOfTen
+(@)  (ß) ($) (¤) (µ) (-)  (+) (/) (|) (#) P42
+kRowOfTen
+(⌫) (<) (>) (ç) (^) (=)  (~) (?) (!) (⏎) P52
+kRowOfTen
 kBottomRowAltR
 ;
 `.trim();
@@ -215,49 +110,14 @@ export const KbdQwerty = `
 kSetStyle
 kNav
 kFKeys
-(1) P13
-(2) P14
-(3) P15
-(4) P16
-(5) P17
-(6) P18
-(7) P19
-(8) P20
-(9) P21
-(0) P22
-
-(Q) P23
-(W) P24
-(E) P25
-(R) P26
-(T) P27
-(Y) P28
-(U) P29
-(I) P30
-(O) P31
-(P) P32
-
-(A) P33
-(S) P34
-(D) P35
-(F) P36
-(G) P37
-(H) P38
-(J) P39
-(K) P40
-(L) P41
-(⌫ ) P42
-
-(!) P43
-(Z) P44
-(X) P45
-(C) P46
-(V) P47
-(B) P48
-(N) P49
-(M) P50
-(?) P51
-(⏎ ) P52  # Return
+(1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
+kRowOfTen
+(Q) (W) (E) (R) (T) (Y) (U) (I) (O) (P) P32
+kRowOfTen
+(A) (S) (D) (F) (G) (H) (J) (K) (L) (⌫) P42
+kRowOfTen
+(!) (Z) (X) (C) (V) (B) (N) (M) (?) (⏎) P52
+kRowOfTen
 kBottomRow
 ;
 
@@ -265,49 +125,14 @@ kBottomRow
 kSetStyle
 kNav
 kFKeysAlt
-() P13
-() P14
-() P15
-() P16
-() P17
-() P18
-() P19
-() P20
-() P21
-() P22
-
-(%) P23
-(^) P24
-(~) P25
-(|) P26
-([) P27
-(]) P28
-(<) P29
-(>) P30
-({) P31
-(}) P32
-
-(@) P33
-(#) P34
-(&) P35
-(*) P36
-(-) P37
-(+) P38
-(=) P39
-(() P40
-(\\)) P41
-(⌫ ) P42
-
-(\`) P43
-(_) P44
-($) P45
-(") P46
-(') P47
-(:) P48
-(;) P49
-(/) P50
-(\\\\) P51  # js needs multi-escape
-(⏎ ) P52  # Return
+()  ()  ()  ()  ()  ()  ()  ()  ()   ()  P22
+kRowOfTen
+(%) (^) (~) (|) ([) (]) (<) (>) ({)  (}) P32
+kRowOfTen
+(@) (#) (&) (*) (-) (+) (=) (() (\\)) (⌫) P42
+kRowOfTen
+(\`) (_) ($) (") (') (:) (;) (/) (\\\\) (⏎) P52
+kRowOfTen
 kBottomRowAltR  # Yes, really AltR
 ;
 `.trim();
@@ -330,135 +155,121 @@ export const KbdCommon = `
 : kRow 33 * 269 + ; # y of key top, 0..8
 
 # Set style for key outlines
-: kSetStyle 1 fill 2 stroke 0 radius ;
+: kSetStyle 1 fill 2 stroke ;
 
-# Draw key label -- (utf8) x=S y=T
-: kLabel 16 25 +xy txtC ;
+# Draw {1,2,4}-wide key with label -- T=(utf8)
+# Box dimension +1px makes border lines overlap
+: key1  34 34 rect mark 16 25 +xy txtC gomark ;
+: key2  67 34 rect mark 31 25 +xy txtC gomark ;
+: key4 133 34 rect mark 76 25 +xy txtC gomark ;
 
-# Draw {1,2,4}-wide key -- (utf8) x=S y=T
-# Box dimensions +1px makes lines overlap
-: key1 goxy  34 34 rect kLabel ;
-: key2 goxy  67 34 rect 15 0 +xy kLabel ;
-: key4 goxy 133 34 rect kLabel ;
+: P2  9 kCol shr  0 kRow goxy ;  # Up
+: P5  7 kCol shr  1 kRow goxy ;  # Left
+: PC  9 kCol shr  1 kRow goxy ;  # Click
+: P6 11 kCol shr  1 kRow goxy ;  # Right
+: P3  0 kCol      2 kRow goxy ;  # F1
+: P4  2 kCol      2 kRow goxy ;  # F2
+: P9  9 kCol shr  2 kRow goxy ;  # Down
+: P7  6 kCol      2 kRow goxy ;  # F3
+: P8  8 kCol      2 kRow goxy ;  # F4
 
-: P2  9 kCol shr  0 kRow key1 ;  # Up
-: P5  7 kCol shr  1 kRow key1 ;  # Left
-: PC  9 kCol shr  1 kRow key1 ;  # Click
-: P6 11 kCol shr  1 kRow key1 ;  # Right
-: P3  0 kCol      2 kRow key2 ;  # F1
-: P4  2 kCol      2 kRow key2 ;  # F2
-: P9  9 kCol shr  2 kRow key1 ;  # Down
-: P7  6 kCol      2 kRow key2 ;  # F3
-: P8  8 kCol      2 kRow key2 ;  # F4
+: P13 0 kCol 3 kRow goxy ; # Number row
+: P14 1 kCol 3 kRow goxy ;
+: P15 2 kCol 3 kRow goxy ;
+: P16 3 kCol 3 kRow goxy ;
+: P17 4 kCol 3 kRow goxy ;
+: P18 5 kCol 3 kRow goxy ;
+: P19 6 kCol 3 kRow goxy ;
+: P20 7 kCol 3 kRow goxy ;
+: P21 8 kCol 3 kRow goxy ;
+: P22 9 kCol 3 kRow goxy ;
 
-: P13 0 kCol 3 kRow key1 ; # Number row
-: P14 1 kCol 3 kRow key1 ;
-: P15 2 kCol 3 kRow key1 ;
-: P16 3 kCol 3 kRow key1 ;
-: P17 4 kCol 3 kRow key1 ;
-: P18 5 kCol 3 kRow key1 ;
-: P19 6 kCol 3 kRow key1 ;
-: P20 7 kCol 3 kRow key1 ;
-: P21 8 kCol 3 kRow key1 ;
-: P22 9 kCol 3 kRow key1 ;
+: P23 0 kCol 4 kRow goxy ; # Upper Letter row
+: P24 1 kCol 4 kRow goxy ;
+: P25 2 kCol 4 kRow goxy ;
+: P26 3 kCol 4 kRow goxy ;
+: P27 4 kCol 4 kRow goxy ;
+: P28 5 kCol 4 kRow goxy ;
+: P29 6 kCol 4 kRow goxy ;
+: P30 7 kCol 4 kRow goxy ;
+: P31 8 kCol 4 kRow goxy ;
+: P32 9 kCol 4 kRow goxy ;
 
-: P23 0 kCol 4 kRow key1 ; # Upper Letter row
-: P24 1 kCol 4 kRow key1 ;
-: P25 2 kCol 4 kRow key1 ;
-: P26 3 kCol 4 kRow key1 ;
-: P27 4 kCol 4 kRow key1 ;
-: P28 5 kCol 4 kRow key1 ;
-: P29 6 kCol 4 kRow key1 ;
-: P30 7 kCol 4 kRow key1 ;
-: P31 8 kCol 4 kRow key1 ;
-: P32 9 kCol 4 kRow key1 ;
+: P33 0 kCol 5 kRow goxy ; # Home letter row
+: P34 1 kCol 5 kRow goxy ;
+: P35 2 kCol 5 kRow goxy ;
+: P36 3 kCol 5 kRow goxy ;
+: P37 4 kCol 5 kRow goxy ;
+: P38 5 kCol 5 kRow goxy ;
+: P39 6 kCol 5 kRow goxy ;
+: P40 7 kCol 5 kRow goxy ;
+: P41 8 kCol 5 kRow goxy ;
+: P42 9 kCol 5 kRow goxy ;
 
-: P33 0 kCol 5 kRow key1 ; # Home letter row
-: P34 1 kCol 5 kRow key1 ;
-: P35 2 kCol 5 kRow key1 ;
-: P36 3 kCol 5 kRow key1 ;
-: P37 4 kCol 5 kRow key1 ;
-: P38 5 kCol 5 kRow key1 ;
-: P39 6 kCol 5 kRow key1 ;
-: P40 7 kCol 5 kRow key1 ;
-: P41 8 kCol 5 kRow key1 ;
-: P42 9 kCol 5 kRow key1 ;
+: P43 0 kCol 6 kRow goxy ; # ShiftL position
+: P44 1 kCol 6 kRow goxy ; # Lower letter row
+: P45 2 kCol 6 kRow goxy ;
+: P46 3 kCol 6 kRow goxy ;
+: P47 4 kCol 6 kRow goxy ;
+: P48 5 kCol 6 kRow goxy ;
+: P49 6 kCol 6 kRow goxy ;
+: P50 7 kCol 6 kRow goxy ;
+: P51 8 kCol 6 kRow goxy ;
+: P52 9 kCol 6 kRow goxy ; # ShiftR/Return
 
-: P43 0 kCol 6 kRow key1 ; # ShiftL position
-: P44 1 kCol 6 kRow key1 ; # Lower letter row
-: P45 2 kCol 6 kRow key1 ;
-: P46 3 kCol 6 kRow key1 ;
-: P47 4 kCol 6 kRow key1 ;
-: P48 5 kCol 6 kRow key1 ;
-: P49 6 kCol 6 kRow key1 ;
-: P50 7 kCol 6 kRow key1 ;
-: P51 8 kCol 6 kRow key1 ;
-: P52 9 kCol 6 kRow key1 ; # ShiftR/Return
+: P53 1 kCol 7 kRow goxy ; # AltL
+: P54 2 kCol 7 kRow goxy ; # Comma / SYM
+: P55 3 kCol 7 kRow goxy ; # Space: 4 wide
+: P56 7 kCol 7 kRow goxy ; # Period / Emoji
+: P57 8 kCol 7 kRow goxy ; # AltR
 
-: P53 1 kCol 7 kRow key1 ; # AltL
-: P54 2 kCol 7 kRow key1 ; # Comma / SYM
-: P55 3 kCol 7 kRow key4 ; # Space: 4 wide
-: P56 7 kCol 7 kRow key1 ; # Period / Emoji
-: P57 8 kCol 7 kRow key1 ; # AltR
+# Move left and draw a key -- T=(label)
+: kLK1  -33 0 +xy key1 ;   # +x: (-1*33)
+: kLK2  -66 0 +xy key2 ;   # +x: (-2*33)
+: kLK4 -132 0 +xy key4 ;   # +x: (-4*33)
 
 # Nav keys are same for all layouts
 : kNav  # Up, left, click, right, down
-        () P2
-  () P5 () PC () P6
-        () P9
+  () P2 key1
+  () () () P6 key1 kLK1 kLK1
+  () P9 key1
 ;
 : kFKeys
-  (F1) P3
-  (F2) P4
-  (F3) P7
-  (F4) P8
+  (F1) (F2) P4 key2 kLK2
+  (F3) (F4) P8 key2 kLK2
 ;
 : kFKeysAltL
-  ()     P3
-  ()     P4
-  ()     P7
-  (Ctrl) P8
+  () ()     P4 key2 kLK2
+  () (Ctrl) P8 key2 kLK2
 ;
 : kFKeysAltR
-  (Tab) P3
-  ()    P4
-  ()    P7
-  ()    P8
+  (Tab) () P4 key2 kLK2
+  ()    () P8 key2 kLK2
 ;
 : kFKeysAlt
-  (Tab)  P3
-  ()     P4
-  ()     P7
-  (Ctrl) P8
+  (Tab) ()     P4 key2 kLK2
+  ()    (Ctrl) P8 key2 kLK2
 ;
 
 # Spacebar and Alt keys
-: kSpace ()  P55 ;
-: kAltL  (↑) P53 ;
-: kAltR  (↑) P57 ;
-
-: kBottomRow  # Normal: Modifiers up
-  kAltL
-  (,) P54
-  kSpace
-  (.) P56
-  kAltR
+: kBottomRow                 # No Modifiers
+  (↑) (,) () (.) (↑) P57
+  key1 kLK1 kLK4 kLK1 kLK1
+;
+: kBottomRowAltL             # AltL
+  (↑) () () () (↑) P57
+  key1 kLK1 kLK4 kLK1 kLK1
+;
+: kBottomRowAltR             # AltR
+  (↑) (SYM) () (😃) (↑) P57
+  key1 kLK1 kLK4 kLK1 kLK1
 ;
 
-: kBottomRowAltL  # AltL down
-  kAltL
-  () P54
-  kSpace
-  () P56
-  kAltR
-;
-
-: kBottomRowAltR
-  kAltL
-  (SYM) P54
-  kSpace
-  (😃)  P56
-  kAltR
+# Draw row of ten 1-wide keys, right to left
+# Stack: 10 key labels, T=(rightmost-label)
+: kRowOfTen
+  key1 kLK1 kLK1 kLK1 kLK1
+  kLK1 kLK1 kLK1 kLK1 kLK1
 ;
 `.trim();
 

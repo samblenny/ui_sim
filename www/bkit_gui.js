@@ -66,8 +66,11 @@ class StackMachineContext {
     // Send info message to console log if trace level is high enough
     traceInfo(message, object) {
         if (this.traceLevel >= 1) {
-            let stack = this.stack.map(n => n.v);
-            let registers = {x: this.x, y: this.y};
+            let stack = `  len(stack)=${this.stack.length}  `;
+            if (this.traceLevel >= 3) {
+                stack = this.stack.map(n => n.v);
+            }
+            let registers = `(x:${this.x},y:${this.y})`;
             console.log(registers, stack, message, object);
         }
     }
@@ -75,8 +78,11 @@ class StackMachineContext {
     // Send debug message to console log if trace level is high enough
     traceDebug(message, object) {
         if (this.traceLevel >= 2) {
-            let stack = this.stack.map(n => n.v);
-            let registers = {x: this.x, y: this.y};
+            let stack = `  len(stack)=${this.stack.length}  `;
+            if (this.traceLevel >= 3) {
+                stack = this.stack.map(n => n.v);
+            }
+            let registers = `(x:${this.x},y:${this.y})`;
             console.log(registers, stack, message, object);
         }
     }
@@ -169,8 +175,12 @@ const opcodes = {
         vm.y+=t.v;
     },
     "mark": (vm) => {
-        vm.markX=vm.x.v;
-        vm.markY=vm.y.v;
+        if (!((typeof vm.x)==="number" && (typeof vm.y)==="number")) {
+            vm.setError(`mark: xy type: x=${vm.x} y=${vm.y}`);
+            return;
+        }
+        vm.markX=vm.x;
+        vm.markY=vm.y;
     },
     "gomark": (vm) => {
         vm.x=vm.markX;
@@ -191,14 +201,6 @@ const opcodes = {
             return;
         }
         vm.fill=t.v;
-    },
-    "radius": (vm) => {
-        let t = vm.pop();
-        if (!(t instanceof TInteger)) {
-            vm.setError(`radius: operand type: T=${t}`);
-            return;
-        }
-        vm.radius=t.v;
     },
     "txtC": (vm) => {
         let t=vm.pop();
@@ -468,17 +470,25 @@ function evalWord(vm, word, callDepth) {
     let maxDepth = 30;
     if (callDepth >= maxDepth) {
         console.warn("call stack too deep: "+word);
-    } else if (word instanceof TString || word instanceof TBitmap || word instanceof TInteger) {
-        // Strings, bitmaps, and integers get pushed to stack
-        vm.traceDebug('eval:', word);
+    } else if (word instanceof TString) {
+        // Push strings
+        vm.traceDebug('eval string:', word.v);
+        vm.push(word);
+    } else if (word instanceof TBitmap) {
+        // Push bitmap
+        vm.traceDebug('eval bitmap:', word.v);
+        vm.push(word);
+    } else if (word instanceof TInteger) {
+        // Push integer
+        vm.traceDebug('eval integer:', word.v);
         vm.push(word);
     } else if (word instanceof TOpcode) {
         // Opcodes get invoked through the table of opcode function pointers
-        vm.traceDebug('eval:', word);
+        vm.traceDebug('eval opcode:', word.v);
         opcodes[word.v](vm);
     } else if (word instanceof TSymbol) {
         // Symbols get looked up... if they are functions, they get expanded and evaluated
-        vm.traceDebug('eval:', word);
+        vm.traceDebug('eval symbol:', word.v);
         let fnWords = vm.fnDefs[word.v];
         if (fnWords) {
             for (let w of fnWords) {

@@ -62,14 +62,13 @@ and push</pre></td></tr>
 <tr>   <td>txtC</td> <td><pre class="prop">Draw text utf8=T using current
 xy as baseline center; pop</pre></td></tr>
 <tr>   <td>txtL</td> <td>As <code>txtC</code>, except baseline left</td></tr>
-<tr> <td>radius</td> <td>Rect radius=T; pop</td></tr>
 <tr>   <td>rect</td> <td><pre class="prop">Draw rect: from current xy,
 go S right and T down; pop 2</td></tr>
 <tr>  <td>image</td> <td><pre class="prop">Draw bitmap down and right
 from current xy; pop 3;
 stack: <code>&lt;</code>pixels<code>&gt;</code> wide=S high=T</td></tr>
-<tr>  <td>trace</td> <td><pre class="prop">Console log trace level=T:
-0:none 1:info 2:debug; pop</td></tr>
+<tr>  <td>trace</td> <td><pre class="prop">Console logging level=T: 0:no
+1:info 2:+debug 3:+stack; pop</td></tr>
 <tr>    <td>nop</td> <td>Does nothing; good for tracing</td></tr>
 </table>
 </div>

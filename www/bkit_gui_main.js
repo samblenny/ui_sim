@@ -100,9 +100,7 @@ function initialize() {
         doRepaintWithEventCode(`: note (${text}) ;`);
     });
     triggerDiv.appendChild(note);
-
-    // This might take a while, so schedule it for a repaint
-    window.requestAnimationFrame(doHardReset);
+    doHardReset();
 }
 
 // Load ROM pages and render with default slot values
@@ -113,7 +111,8 @@ function doHardReset() {
     let allRomPages = ['Sprites', 'Widgets', 'KbdCommon', 'KbdQwerty',
                     'KbdAzerty', 'Views', 'PaintFrame'];
     let code = allRomPages.map(p => cachedRomPages[p]).join("\n");
-    bkit_gui.run(code, screen);
+    // This might take a while, so schedule it for a repaint
+    window.requestAnimationFrame(() => bkit_gui.run(code, screen));
 }
 
 // Render frame with event code spliced between toolkit library pages (with
@@ -126,7 +125,8 @@ function doRepaintWithEventCode(eventCode) {
     let slotOverrides = eventCode;
     let paintFrameCode = cachedRomPages['PaintFrame'];
     let code = [libraryCode, slotOverrides, paintFrameCode].join("\n");
-    bkit_gui.run(code, screen);
+    // This might take a while, so schedule it for a repaint
+    window.requestAnimationFrame(() => bkit_gui.run(code, screen));
 }
 
 // Load a fresh copy of ROM into the cache
