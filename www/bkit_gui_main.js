@@ -10,7 +10,6 @@ const spriteGrid = document.querySelector('#sprite .grid');
 var spritePixels; // This gets set properly after buttons are injected into grid
 const spriteText = document.querySelector('#spriteText');
 const screen = document.querySelector('#screen');
-var screenGroup = null; // This gets set later after a group element is injected
 var cachedRomPages = {};
 var activePage = null;
 
