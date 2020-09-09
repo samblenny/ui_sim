@@ -4,11 +4,12 @@
 // - Syntax for defining functions, utf8 strings, and bitmaps
 
 // Token types (intended to work like Rust enum variants)
-class TString   {constructor(v) {this.v=v;}}
-class TBitmap   {constructor(v) {this.v=v;}}
-class TInteger  {constructor(v) {this.v=v;}}
-class TOpcode   {constructor(v) {this.v=v;}}
-class TSymbol   {constructor(v) {this.v=v;}}
+class TString    {constructor(v) {this.v=v;} toString() {return `TString(${this.v})`;}}
+class TBitmap    {constructor(v) {this.v=v;} toString() {return `TBitmap(${this.v})`;}}
+class TInteger   {constructor(v) {this.v=v;} toString() {return `TInteger(${this.v})`;}}
+class TOpcode    {constructor(v) {this.v=v;} toString() {return `TOpcode(${this.v})`;}}
+class TSymbol    {constructor(v) {this.v=v;} toString() {return `TSymbol(${this.v})`;}}
+class TUnderflow {constructor(v) {this.v=null;} toString() {return "TUnderflow";}}
 
 // Interpreter and VM state for parser, stack, and registers
 class StackMachineContext {
@@ -43,7 +44,10 @@ class StackMachineContext {
     push(val) {if (val) {this.stack.push(val);}}
 
     // Stack pop
-    pop() {return this.stack.pop();}
+    pop() {
+        let t = this.stack.pop();
+        return (t !== undefined) ? t : new TUnderflow();
+    }
 
     // Get character from code buffer
     charAt(index) {return this.code[index];}
@@ -55,8 +59,8 @@ class StackMachineContext {
     codeAroundError(startOfDef, problemIndex) {
         const range = 20;
         let before = Math.max(0, startOfDef-range);
-        let after = Math.min(this.maxIndex, problemIndex);
-        return this.code.slice(before, after);
+        let after = Math.min(this.maxIndex+1, problemIndex);
+        return `"...${this.code.slice(before, after)}"`;
     }
 
     // Send info message to console log if trace level is high enough
@@ -80,27 +84,166 @@ class StackMachineContext {
 
 // Stack machine VM opcodes
 const opcodes = {
-    "+":       (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(new TInteger(s.v + t.v));},
-    "-":       (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(new TInteger(s.v - t.v));},
-    "*":       (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(new TInteger(s.v * t.v));},
-    "shr":     (vm) => {let t=vm.pop(); vm.push(new TInteger(t.v >> 1));},
-    "dup":     (vm) => {let t=vm.pop(); vm.push(t); vm.push(t);},
-    "drop":    (vm) => {vm.pop();},
-    "swap":    (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(t); vm.push(s);},
-    "over":    (vm) => {let t=vm.pop(), s=vm.pop(); vm.push(s); vm.push(t); vm.push(s);},
-    "+xy":     (vm) => {let t=vm.pop(), s=vm.pop(); vm.x+=s.v; vm.y+=t.v;},
-    "goxy":    (vm) => {let t=vm.pop(), s=vm.pop(); vm.x=s.v; vm.y=t.v;},
-    "mark":    (vm) => {vm.markX=vm.x.v; vm.markY=vm.y.v;},
-    "gomark":  (vm) => {vm.x=vm.markX; vm.y=vm.markY;},
-    "stroke":  (vm) => {vm.stroke=vm.pop().v;},
-    "fill":    (vm) => {vm.fill=vm.pop().v;},
-    "txtC":    (vm) => {let txt=vm.pop().v; textC(vm, txt);},
-    "txtL":    (vm) => {let txt=vm.pop().v; textL(vm, txt);},
-    "radius":  (vm) => {vm.radius=vm.pop().v;},
-    "rect":    (vm) => {let dn=vm.pop(), rt=vm.pop(); rect(vm, rt.v, dn.v);},
-    "image":   (vm) => {let h=vm.pop(), w=vm.pop(), bits=vm.pop(); image(vm, bits.v, w.v, h.v);},
-    "trace":   (vm) => {let t=vm.pop(); vm.traceLevel=t.v;},
-    "nop":     (vm) => {}, // No effect, but useful for tracing
+    "+": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (!(t instanceof TInteger && s instanceof TInteger)) {
+            vm.setError(`+: operand types: S=${s} T=${t}`);
+            return;
+        }
+        vm.push(new TInteger(s.v + t.v));
+    },
+    "-": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (!(t instanceof TInteger && s instanceof TInteger)) {
+            vm.setError(`-: operand types: S=${s} T=${t}`);
+            return;
+        }
+        vm.push(new TInteger(s.v - t.v));
+    },
+    "*": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (!(t instanceof TInteger && s instanceof TInteger)) {
+            vm.setError(`*: operand types: S=${s} T=${t}`);
+            return;
+        }
+        vm.push(new TInteger(s.v * t.v));
+    },
+    "shr": (vm) => {
+        let t=vm.pop();
+        if (!(t instanceof TInteger)) {
+            vm.setError(`shr: operand type: T=${t}`);
+            return;
+        }
+        vm.push(new TInteger(t.v >> 1));
+    },
+    "dup": (vm) => {
+        let t=vm.pop();
+        if (t instanceof TUnderflow) {
+            vm.setError("dup: underflow");
+            return;
+        }
+        vm.push(t);
+        vm.push(t);
+    },
+    "drop": (vm) => {
+        let t=vm.pop();
+        if (t instanceof TUnderflow) {
+            vm.setError("drop: underflow");
+        }
+    },
+    "swap": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (t instanceof TUnderflow || s instanceof TUnderflow) {
+            vm.setError(`swap: underflow: S=${s} T=${t}`);
+            return;
+        }
+        vm.push(t);
+        vm.push(s);
+    },
+    "over": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (t instanceof TUnderflow || s instanceof TUnderflow) {
+            vm.setError(`over: underflow: S=${s} T=${t}`);
+            return;
+        }
+        vm.push(s);
+        vm.push(t);
+        vm.push(s);
+    },
+    "goxy": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (!(t instanceof TInteger && s instanceof TInteger)) {
+            vm.setError(`goxy: operand types: S=${s} T=${t}`);
+            return;
+        }
+        vm.x=s.v;
+        vm.y=t.v;
+    },
+    "+xy": (vm) => {
+        let t=vm.pop(), s=vm.pop();
+        if (!(t instanceof TInteger && s instanceof TInteger)) {
+            vm.setError(`+xy: operand types: S=${s} T=${t}`);
+            return;
+        }
+        vm.x+=s.v;
+        vm.y+=t.v;
+    },
+    "mark": (vm) => {
+        vm.markX=vm.x.v;
+        vm.markY=vm.y.v;
+    },
+    "gomark": (vm) => {
+        vm.x=vm.markX;
+        vm.y=vm.markY;
+    },
+    "stroke": (vm) => {
+        let t = vm.pop();
+        if (!(t instanceof TInteger)) {
+            vm.setError(`stroke: operand type: T=${t}`);
+            return;
+        }
+        vm.stroke=t.v;
+    },
+    "fill": (vm) => {
+        let t = vm.pop();
+        if (!(t instanceof TInteger)) {
+            vm.setError(`fill: operand type: T=${t}`);
+            return;
+        }
+        vm.fill=t.v;
+    },
+    "radius": (vm) => {
+        let t = vm.pop();
+        if (!(t instanceof TInteger)) {
+            vm.setError(`radius: operand type: T=${t}`);
+            return;
+        }
+        vm.radius=t.v;
+    },
+    "txtC": (vm) => {
+        let t=vm.pop();
+        if (!(t instanceof TString)) {
+            vm.setError(`txtC: operand type: T=${t}`);
+            return;
+        }
+        textC(vm, t.v);
+    },
+    "txtL": (vm) => {
+        let t=vm.pop();
+        if (!(t instanceof TString)) {
+            vm.setError(`txtL: operand type: T=${t}`);
+            return;
+        }
+        textL(vm, t.v);
+    },
+    "rect": (vm) => {
+        let dn=vm.pop(), rt=vm.pop();
+        if (!(rt instanceof TInteger && dn instanceof TInteger)) {
+            vm.setError(`rect: operand types: right=${rt} down=${dn}`);
+            return;
+        }
+        rect(vm, rt.v, dn.v);
+    },
+    "image": (vm) => {
+        let h=vm.pop(), w=vm.pop(), bits=vm.pop();
+        if (!(h instanceof TInteger && w instanceof TInteger && bits instanceof TBitmap)) {
+            vm.setError(`image: operand type: ${bits} wide=${w} high=${h}`);
+            return;
+        } else if (bits.v.length !== w.v * h.v) {
+            vm.setError(`image: bitmap size: len(pixels)=${bits.v.length} w*h=${w.v*h.v}`);
+            return;
+        }
+        image(vm, bits.v, w.v, h.v);
+    },
+    "trace": (vm) => {
+        let t=vm.pop();
+        if (!(t instanceof TInteger)) {
+            vm.setError(`trace: operand type: T=${t}`);
+            return;
+        }
+        vm.traceLevel=t.v;
+    },
+    "nop": (vm) => {}, // No effect, but useful for tracing
 };
 
 // SVG namespace is required to make document.createElementNS work for SVG
@@ -192,13 +335,13 @@ export function run(code, svgElement) {
         }
     }
     if (vm.error) {
-        console.error("bkit error:", vm.error);
+        console.warn("error:", vm.error);
     }
 }
 
 // Skip over Comment, consuming characters until end of line
 function consumeComment(vm) {
-    for (/* nop */; vm.i<=vm.maxIndex; vm.i++) {
+    for (/* nop */; vm.i<=vm.maxIndex && !vm.error; vm.i++) {
         let c = vm.charAt(vm.i);
         if (c==="\n" || c==="\r" || vm.i===vm.maxIndex) {
             return;
@@ -210,7 +353,7 @@ function consumeComment(vm) {
 // Escape char is '\', so "\)" collects as ')'
 function compileStringDef(vm) {
     let strBuf=[], iOrig=vm.i;
-    for (vm.i++; vm.i<=vm.maxIndex; vm.i++) {
+    for (vm.i++; vm.i<=vm.maxIndex && !vm.error; vm.i++) {
         let c = vm.charAt(vm.i);
         if (c==="\\" && vm.i<vm.maxIndex) {        // Collect escaped char
             vm.i++;
@@ -231,7 +374,7 @@ function compileStringDef(vm) {
 // Compile Bitmap definition, consuming bit characters until '>'
 function compileBitmapDef(vm) {
     let bitBuf=[], iOrig=vm.i;
-    for (vm.i++; vm.i<=vm.maxIndex; vm.i++) {
+    for (vm.i++; vm.i<=vm.maxIndex && !vm.error; vm.i++) {
         let c = vm.charAt(vm.i);
         if(c==="0" || c==="1") {
             bitBuf.push(c);                               // Collect bit
@@ -241,7 +384,7 @@ function compileBitmapDef(vm) {
             return new TBitmap(bitBuf);                 // End of bitmap
         } else {
             // Bad char in bitmap (not 0, 1, or whitespace)
-            let codeContext = vm.codeAroundError(iOrig, vm.i);
+            let codeContext = vm.codeAroundError(iOrig, vm.i+1);
             vm.setError("bitmap: syntax error: " + codeContext);
             return null;
         }
@@ -255,7 +398,7 @@ function compileBitmapDef(vm) {
 // Function definition: consume chars and collect words until ';'
 function compileFunctionDef(vm) {
     let words=[], iOrig=vm.i;
-    for (vm.i++; vm.i<=vm.maxIndex; vm.i++) {
+    for (vm.i++; vm.i<=vm.maxIndex && !vm.error; vm.i++) {
         let c = vm.charAt(vm.i);
         if (c === "#") {                          // Comment
             consumeComment(vm);
@@ -269,11 +412,11 @@ function compileFunctionDef(vm) {
             words.push(bits);
         } else if (c === ";") {                   // End function def
             let name = words.shift();
-            vm.traceDebug(`: ${name.v} ... ; = `, words);
-            if (name) {
+            if (name !== undefined ) {
+                vm.traceDebug(`: ${name.v} ... ; = `, words);
                 vm.defineFn(name.v, words);
             } else {
-                let codeContext = vm.codeAroundError(iOrig, vm.i);
+                let codeContext = vm.codeAroundError(iOrig, vm.i+1);
                 vm.setError("function: missing function name: " + codeContext);
             }
             return;
@@ -291,7 +434,7 @@ function compileFunctionDef(vm) {
 // Collect integer, name, or opcode, consuming chars until first whitespace
 function collectWord(vm) {
     let wordBuf=[], iOrig=vm.i;
-    for (/* nop */; vm.i<=vm.maxIndex; vm.i++) {
+    for (/* nop */; vm.i<=vm.maxIndex && !vm.error; vm.i++) {
         let c = vm.charAt(vm.i);
         if(vm.i===vm.maxIndex && !" \t\r\n".includes(c)) {
             // Make sure not to truncate the last character of the input buffer
@@ -303,7 +446,7 @@ function collectWord(vm) {
             if (w.match(/^-?[0-9]+$/)) {                             // Integer
                 return new TInteger(Number.parseInt(w));
             } else if (w.match(/^[0-9]+\./)) {                // Bad: no floats
-                let codeContext = vm.codeAroundError(iOrig, vm.i);
+                let codeContext = vm.codeAroundError(iOrig, vm.i+1);
                 vm.setError("Bad syntax: no floats: " + codeContext);
                 return null;
             } else if (opcodes[w]) {                                  // Opcode
