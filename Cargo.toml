@@ -1,2 +1,2 @@
 [workspace]
-members = ["mktcp", ]
+members = ["mktcp", "mkwasm", "kbddrv"]
