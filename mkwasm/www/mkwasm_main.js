@@ -2,10 +2,11 @@
 import { loadIMEEngineWasm, syncMessages } from './mkwasm_wasm.js';
 import * as bkit_gui from './bkit_gui.js';
 import * as rom from './bkit_gui_rom.js';
+import * as kbd from './bkit_kbd.js';
 
 const wasmModule = "mkwasm.wasm"
 const backlightBtn = document.querySelector('#backlightBtn');
-const romPage = document.querySelector('#romPage');
+const keyboard = document.querySelector('#keyboard');
 const screen = document.querySelector('#screen');
 var cachedRomPages = {};
 
@@ -16,19 +17,20 @@ window.requestAnimationFrame(initialize);
 // Load data and add event listeners
 function initialize() {
     loadRomToCache();
-    
+
     // Configure backlight button
     backlightBtn.addEventListener('click', e => {
         let c = "backlit";
         let list = screen.classList;
         if (list.contains(c)) {
             list.remove(c);
-            grid.remove(c);
         } else {
             list.add(c);
-            grid.add(c);
         }
     });
+
+    kbd.addKeyboardListener(document);
+    kbd.showAzertyOSK(keyboard);
 
     // Hard Reset:  doHardReset(),
     // Soft Reboot: doRepaintWithEventCode(""),

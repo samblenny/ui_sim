@@ -4,17 +4,16 @@ html,body,div,pre,h1,p,button,label,select,textarea,svg{margin:0;padding:0;box-s
 body,div,pre,h1,p,button,select,textarea{font-size:inherit;color:inherit;}
 p{margin:0.3em 10px;}
 header{grid-area:H;color:#ddd;display:flex;align-items:baseline;}
-#editor{grid-area:E;display:block;padding:10px;border:none;border-radius:6px;}
 #screen{grid-area:S;background:#fff;overflow:auto;}
-#keyboard{grid-area:C;background:#888;padding:10px;min-height:140px;border-radius:6px;}
+#log{grid-area:E;display:block;padding:10px;border:none;border-radius:6px;}
+#keyboard{grid-area:K;background:#4b4b4b;width:485px;height:389px;border:none;border-radius:6px;}
 body{display:grid;
- grid:". . . . . . . " 20px
-      ". . S . . H  ." 41px
-      ". . S . . E  ." 495px
-      ". . . . . E  ." 18px
-      ". C C C . E  ." auto
-      ". . . . . .  ." minmax(20px,1fr)
-      / minmax(10px,1fr) 72px 336px 72px 20px 490px minmax(10px,1fr);}
+ grid:". . . . . . " 20px
+      ". . S . H  ." 41px
+      ". . S . L  ." auto
+      ". . S . K  ." auto
+      ". . . . .  ." 1fr
+      / minmax(10px,1fr) 72px 336px 72px 480px minmax(10px,1fr);}
 header h1{display:inline-block;font-size:1.5em;margin-left:2px;margin-right:auto;color:#ddd;}
 header button, header select{
     padding:4px;border-radius:6px;border:2px solid #999;
@@ -27,8 +26,8 @@ header :last-child{margin-right:auto;}
     width:336px;height:536px;border-radius:3px;stroke:none;fill:#333;background:#aabac9;
     stroke-width:1px;stroke-linecap:square;shape-rendering:crispEdges;vector-effect:non-scaling-stroke;}
 #screen text{stroke:none;font-size:16px;font-family:sans-serif;}
-#screen text.tc{text-anchor:middle;user-select:none;}
-#screen text.tl{text-anchor:left;user-select:none;}
+svg text.tc{text-anchor:middle;user-select:none;-webkit-user-select: none;}
+svg text.tl{text-anchor:left;user-select:none;-webkit-user-select: none;}
 #screen .s0{stroke:none;}
 #screen .s1{stroke:#333;}
 #screen .s2{stroke:#aabac9;}
@@ -39,3 +38,9 @@ header :last-child{margin-right:auto;}
 #screen.backlit .f2{fill:#96e00e;}
 #screen.backlit{background:#96e00e;}
 #screen path{fill:none;stroke-linejoin:miter;stroke-linecap:square;}
+
+#keyboard{-webkit-touch-callout:none;-webkit-user-select:none;/*prevent unintended selecting in iOS*/}
+#keyboard rect{stroke-width:2px;stroke-linecap:square;stroke:#1a1a1a;fill:#1a1a1a;}
+#keyboard rect{-webkit-tap-highlight-color: transparent;/*turn off default gray tap overlay*/}
+#keyboard rect.glow{stroke-width:3;stroke:#96e00e;fill:#000;/*click feedback*/}
+#keyboard text{stroke:none;fill:#eee;pointer-events:none/*only rect gets clicks*/;}
