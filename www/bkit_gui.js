@@ -32,7 +32,6 @@ class StackMachineContext {
         this.markY = 0;        // Marked Y coordinate
         this.stroke = 1;       // 0:none, 1:blk, 2:wht
         this.fill = 0;         // 0:none, 1:blk, 2:wht
-        this.radius = 0;       // Current corner radius for rectangles
         this.traceOn = false;  // Debug tracing: true=enabled
         this.fnDefs = {};      // Function definitions
     }
