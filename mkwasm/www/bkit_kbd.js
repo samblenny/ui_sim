@@ -169,11 +169,8 @@ function buildAzertyOSK() {
     for (const [keyId, col, row, width] of keyBoxBounds) {
         let r = keyRect(keyId, col, row, width);
         g.appendChild(r);
-        let label = AzertyKeys[keyId][0];
-        if (label !== '') {
-            let tc = textC(label, col, row, width);
-            g.appendChild(tc);
-        }
+        let labels = AzertyKeys[keyId];
+        appendKeyLabels(g, labels, col, row, width);
     }
     return g;
 }
@@ -184,11 +181,9 @@ function buildQwertyOSK() {
     for (const [keyId, col, row, width] of keyBoxBounds) {
         let r = keyRect(keyId, col, row, width);
         g.appendChild(r);
-        let label = QwertyKeys[keyId][0];
-        if (label !== '') {
-            let tc = textC(label, col, row, width);
-            g.appendChild(tc);
-        }
+        g.appendChild(r);
+        let labels = QwertyKeys[keyId];
+        appendKeyLabels(g, labels, col, row, width);
     }
     return g;
 }
@@ -214,6 +209,52 @@ function keyRect(keyId, col, row, width) {
     return r;
 }
 
+// Add key labels to svg group with automatic selection of color & position
+// Precondition: labels must be of length <=3
+function appendKeyLabels(g, labels, col, row, width) {
+    if (labels.length>3) {
+        console.error("cannot put more than three labels on a key");
+        return;
+    }
+    const [x0, y0, w, h] = xywhForColRowWidth(col, row, width);
+    const colors = ['a', 'b', 'c'];
+    // length == 3: bottom center, top left, top right
+    // length <= 2: bottom center, top center
+    let positions = [[0.5, 0.85], [0.25, 0.4], [0.75, 0.4]];
+    if (labels.length <= 2) {
+        positions = [[0.5, 0.85], [0.5, 0.4]];
+    }
+    for (let i=0; i<labels.length; i++) {
+        let label = labels[i];
+        if (label === '') {
+            continue;
+        }
+        let classAttr = colors[i];
+        let [xPercent, yPercent] = positions[i];
+        if (['⏎', '⌫', '↑'].includes(label)) {
+            // Always put special key labels at center center
+            [xPercent, yPercent] = [0.5, 0.7];
+            classAttr += " md";
+        }
+        if ('↑' === label) {
+            classAttr += " lg";
+        }
+        let x1 = x0 + (xPercent * w);
+        let y1 = y0 + (yPercent * h);
+        g.appendChild(textC(label, x1, y1, classAttr));
+    }
+}
+
+// Return svg text element with center baseline at (x,y)
+function textC(text, x, y, classAttr) {
+    let tc = document.createElementNS(SVG_NS, 'text');
+    tc.setAttribute('x', x);
+    tc.setAttribute('y', y);
+    tc.setAttribute('class', `tc ${classAttr}`);
+    tc.textContent = text;
+    return tc;
+}
+
 // Handle key press and show visual feedback
 function doSvgKeyPress(e) {
     e.target.classList.add('glow');
@@ -236,17 +277,6 @@ function doSvgClick(e) {
     console.log("click: ", e.target.id);
 }
 
-// Return text centered in key grid rectangle specified by (row, col, width)
-function textC(text, col, row, width) {
-    let tc = document.createElementNS(SVG_NS, 'text');
-    let [x, y, w, h] = xywhForColRowWidth(col, row, width);
-    tc.setAttribute('x', x + w * 0.5);
-    tc.setAttribute('y', y + h * 0.8);
-    tc.setAttribute('class', 'tc');
-    tc.textContent = text;
-    return tc;
-}
-
 // Compute rectangle bounds on key grid given key's column, row, and width
 function xywhForColRowWidth(col, row, width) {
     const keyGridSize = 48;
@@ -266,60 +296,60 @@ const AzertyKeys = {
     'P6': ['', '', ''],
     'P9': ['', '', ''],
 
-    'P3': ['F1', '', 'Tab'],
+    'P3': ['F1', 'Tab', ''],
     'P4': ['F2', '', ''],
     'P7': ['F3', '', ''],
-    'P8': ['F4', 'Ctrl', ''],
+    'P8': ['F4', '', 'Ctrl'],
 
-    'P13': ['1', '§', 'à'],
-    'P14': ['2', '', 'é'],
-    'P15': ['3', '', 'è'],
-    'P16': ['4', '', 'ê'],
-    'P17': ['5', '[', '('],
-    'P18': ['6', ']', ')'],
-    'P19': ['7', '', '&'],
-    'P20': ['8', '_', '*'],
-    'P21': ['9', '\'', '«'],
-    'P22': ['0', '"', '»'],
+    'P13': ['1', 'à', '§'],
+    'P14': ['2', 'é'],
+    'P15': ['3', 'è'],
+    'P16': ['4', 'ê'],
+    'P17': ['5', '(', '['],
+    'P18': ['6', ')', ']'],
+    'P19': ['7', '&'],
+    'P20': ['8', '*', '_'],
+    'P21': ['9', '«', '\''],
+    'P22': ['0', '»', '"'],
 
-    'P23': ['A', '', 'æ'],
-    'P24': ['Z', '', '£'],
-    'P25': ['E', '', '€'],
-    'P26': ['R', '', '`'],
-    'P27': ['T', '', '{'],
-    'P28': ['Y', '', '}'],
-    'P29': ['U', '', 'ù'],
-    'P30': ['I', '', 'ï'],
-    'P31': ['O', '', 'œ'],
-    'P32': ['P', '', '%'],
+    'P23': ['a', 'æ'],
+    'P24': ['z', '£'],
+    'P25': ['e', '€'],
+    'P26': ['r', '`'],
+    'P27': ['t', '{'],
+    'P28': ['y', '}'],
+    'P29': ['u', 'ù'],
+    'P30': ['i', 'ï'],
+    'P31': ['o', 'œ'],
+    'P32': ['p', '%'],
 
-    'P33': ['Q', '', '@'],
-    'P34': ['S', '', 'ß'],
-    'P35': ['D', '', '$'],
-    'P36': ['F', '', '¤'],
-    'P37': ['G', '', 'µ'],
-    'P38': ['H', '', '-'],
-    'P39': ['J', '', '+'],
-    'P40': ['K', '\\', '/'],
-    'P41': ['L', '', '|'],
-    'P42': ['M', '', '#'],
+    'P33': ['q', '@'],
+    'P34': ['s', 'ß'],
+    'P35': ['d', '$'],
+    'P36': ['f', '¤'],
+    'P37': ['g', 'µ'],
+    'P38': ['h', '-'],
+    'P39': ['j', '+'],
+    'P40': ['k', '\\', '/'],
+    'P41': ['l', '|'],
+    'P42': ['m', '#'],
 
-    'P43': ['', '', '⌫'],
-    'P44': ['W', '', '<'],
-    'P45': ['X', '', '>'],
-    'P46': ['C', '', 'ç'],
-    'P47': ['V', '¨', '^'],
-    'P48': ['B', '', '='],
-    'P49': ['N', '', '~'],
+    'P43': ['', '⌫'],
+    'P44': ['w', '<'],
+    'P45': ['x', '>'],
+    'P46': ['c', 'ç'],
+    'P47': ['v', '^'],
+    'P48': ['b', '='],
+    'P49': ['n', '~'],
     'P50': [':', '¿', '?'],
     'P51': [';', '¡', '!'],
-    'P52': ['', '⏎', ''],
+    'P52': ['', '⏎'],
 
-    'P53': ['↑', '↑', '↑'],
-    'P54': [',', '', 'Sym'],
+    'P53': ['', '', '↑'],
+    'P54': [',', 'SYM'],
     'P55': ['', '', ''],
-    'P56': ['.', '', '😃'],
-    'P57': ['↑', '↑', '↑'],
+    'P56': ['.', '😃'],
+    'P57': ['', '↑', ''],
 };
 
 // Key label list format: Id: [Base, Shift]
@@ -379,11 +409,11 @@ const QwertyKeys = {
     'P51': ['?', '\\'],
     'P52': ['⏎', ''],
 
-    'P53': ['↑', '↑'],
+    'P53': ['↑', ''],
     'P54': [',', 'Sym'],
     'P55': ['', ''],
     'P56': ['.', '😃'],
-    'P57': ['↑', '↑'],
+    'P57': ['↑', ''],
 };
 
 // Key location list format: [Id, Column, Row, Width]

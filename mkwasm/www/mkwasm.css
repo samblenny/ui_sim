@@ -44,3 +44,7 @@ svg text.tl{text-anchor:left;user-select:none;-webkit-user-select: none;}
 #keyboard rect{-webkit-tap-highlight-color: transparent;/*turn off default gray tap overlay*/}
 #keyboard rect.glow{stroke-width:3;stroke:#96e00e;fill:#000;/*click feedback*/}
 #keyboard text{stroke:none;fill:#eee;pointer-events:none/*only rect gets clicks*/;}
+#keyboard text.b{fill:#5ec9c9;font-size:14px;}
+#keyboard text.c{fill:#ee7333;font-size:14px;}
+#keyboard text.md{font-size:18px;}
+#keyboard text.lg{font-size:22px;}
