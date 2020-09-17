@@ -171,6 +171,10 @@ function buildAzertyOSK() {
         g.appendChild(r);
         let labels = AzertyKeys[keyId];
         appendKeyLabels(g, labels, col, row, width);
+        // Power button icons need special handling
+        if (['P3', 'P8'].includes(keyId) /*F1,F4*/) {
+            appendPowerIcon(g, keyId, col, row, width);
+        }
     }
     return g;
 }
@@ -184,8 +188,36 @@ function buildQwertyOSK() {
         g.appendChild(r);
         let labels = QwertyKeys[keyId];
         appendKeyLabels(g, labels, col, row, width);
+        // Power button icons need special handling
+        if (['P3', 'P8'].includes(keyId) /*F1,F4*/) {
+            appendPowerIcon(g, keyId, col, row, width);
+        }
     }
     return g;
+}
+
+// Append an svg path containing a power icon in the specified key grid
+// Precondition: keyId must be P3 or P8
+function appendPowerIcon(g, keyId, col, row, width) {
+    var xPercent;
+    if (keyId === 'P3' /*F1*/) {
+        xPercent = 0.18;
+    } else if (keyId === 'P8' /*F4*/) {
+        xPercent = 0.82;
+    } else {
+        console.error(`cannot draw power icon for keyid=${keyId}`);
+    }
+    let yPercent = 0.85;
+    let [x0, y0, w, h] = xywhForColRowWidth(col, row, width);
+    let x1 = x0 + (xPercent * w);
+    let y1 = y0 + (yPercent * h);
+    let r = 5;
+    let gap = r * 1.35;
+    let line = r * 1.3;
+    let d = `M ${x1-gap/2} ${y1-r*1.6} a ${r} ${r} 0 1 0 ${gap} 0 M ${x1} ${y1-r*0.9} l 0 -${line}`;
+    let path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    g.appendChild(path);
 }
 
 // Return rectangle with key grid bounds specified by (row, col, width)
@@ -376,44 +408,44 @@ const QwertyKeys = {
     'P21': ['9', ''],
     'P22': ['0', ''],
 
-    'P23': ['Q', '%'],
-    'P24': ['W', '^'],
-    'P25': ['E', '~'],
-    'P26': ['R', '|'],
-    'P27': ['T', '['],
-    'P28': ['Y', ']'],
-    'P29': ['U', '<'],
-    'P30': ['I', '>'],
-    'P31': ['O', '{'],
-    'P32': ['P', '}'],
+    'P23': ['q', '%'],
+    'P24': ['w', '^'],
+    'P25': ['e', '~'],
+    'P26': ['r', '|'],
+    'P27': ['t', '['],
+    'P28': ['y', ']'],
+    'P29': ['u', '<'],
+    'P30': ['i', '>'],
+    'P31': ['o', '{'],
+    'P32': ['p', '}'],
 
-    'P33': ['A', '@'],
-    'P34': ['S', '#'],
-    'P35': ['D', '&'],
-    'P36': ['F', '*'],
-    'P37': ['G', '-'],
-    'P38': ['H', '+'],
-    'P39': ['J', '='],
-    'P40': ['K', '('],
-    'P41': ['L', ')'],
+    'P33': ['a', '@'],
+    'P34': ['s', '#'],
+    'P35': ['d', '&'],
+    'P36': ['f', '*'],
+    'P37': ['g', '-'],
+    'P38': ['h', '+'],
+    'P39': ['j', '='],
+    'P40': ['k', '('],
+    'P41': ['l', ')'],
     'P42': ['⌫', ''],
 
     'P43': ['!', '`'],
-    'P44': ['Z', '_'],
-    'P45': ['X', '$'],
-    'P46': ['C', '"'],
-    'P47': ['V', '\''],
-    'P48': ['B', ':'],
-    'P49': ['N', ';'],
-    'P50': ['M', '/'],
+    'P44': ['z', '_'],
+    'P45': ['x', '$'],
+    'P46': ['c', '"'],
+    'P47': ['v', '\''],
+    'P48': ['b', ':'],
+    'P49': ['n', ';'],
+    'P50': ['m', '/'],
     'P51': ['?', '\\'],
     'P52': ['⏎', ''],
 
-    'P53': ['↑', ''],
-    'P54': [',', 'Sym'],
+    'P53': ['', '↑'],
+    'P54': [',', 'SYM'],
     'P55': ['', ''],
     'P56': ['.', '😃'],
-    'P57': ['↑', ''],
+    'P57': ['', '↑'],
 };
 
 // Key location list format: [Id, Column, Row, Width]

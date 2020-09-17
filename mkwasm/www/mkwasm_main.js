@@ -6,6 +6,7 @@ import * as kbd from './bkit_kbd.js';
 
 const wasmModule = "mkwasm.wasm"
 const backlightBtn = document.querySelector('#backlightBtn');
+const kbdSelect = document.querySelector('#kbdSelect');
 const keyboard = document.querySelector('#keyboard');
 const screen = document.querySelector('#screen');
 var cachedRomPages = {};
@@ -29,8 +30,16 @@ function initialize() {
         }
     });
 
+    // Configure on-screen keyboard
     kbd.addKeyboardListener(document);
     kbd.showAzertyOSK(keyboard);
+    kbdSelect.addEventListener('change', e => {
+        if (e.target.value === 'Azerty') {
+            kbd.showAzertyOSK(keyboard);
+        } else if (e.target.value === 'Qwerty') {
+            kbd.showQwertyOSK(keyboard);
+        }
+    });
 
     // Hard Reset:  doHardReset(),
     // Soft Reboot: doRepaintWithEventCode(""),
