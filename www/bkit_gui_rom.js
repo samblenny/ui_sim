@@ -59,7 +59,6 @@ export const KbdAzerty = `
 
 : kAzerty
 kSetStyle
-kNav
 kFKeys
 (1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
 kRowOfTen
@@ -74,7 +73,6 @@ kBottomRow
 
 : kAzertyAltL
 kSetStyle
-kNav
 kFKeysAltL
 (§) () () () ([) (]) () (_)  (') (") P22
 kRowOfTen
@@ -89,7 +87,6 @@ kBottomRowAltL
 
 : kAzertyAltR
 kSetStyle
-kNav
 kFKeysAltR
 (à)  (é) (è) (ê) (() (\\)) (&) (*) («) (») P22
 kRowOfTen
@@ -108,7 +105,6 @@ export const KbdQwerty = `
 
 : kQwerty
 kSetStyle
-kNav
 kFKeys
 (1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
 kRowOfTen
@@ -123,7 +119,6 @@ kBottomRow
 
 : kQwertyAlt
 kSetStyle
-kNav
 kFKeysAlt
 ()  ()  ()  ()  ()  ()  ()  ()  ()   ()  P22
 kRowOfTen
@@ -228,12 +223,6 @@ export const KbdCommon = `
 : kLK2  -66 0 +xy key2 ;   # +x: (-2*33)
 : kLK4 -132 0 +xy key4 ;   # +x: (-4*33)
 
-# Nav keys are same for all layouts
-: kNav  # Up, left, click, right, down
-  () P2 key1
-  () () () P6 key1 kLK1 kLK1
-  () P9 key1
-;
 : kFKeys
   (F1) (F2) P4 key2 kLK2
   (F3) (F4) P8 key2 kLK2
@@ -261,7 +250,7 @@ export const KbdCommon = `
   key1 kLK1 kLK4 kLK1 kLK1
 ;
 : kBottomRowAltR             # AltR
-  (↑) (SYM) () (😃) (↑) P57
+  (↑) (SYM) () (㋡) (↑) P57
   key1 kLK1 kLK4 kLK1 kLK1
 ;
 
@@ -286,7 +275,7 @@ export const Widgets = `
 : wStatY1 wStatH 1 - ;
 
 # Height and Y bounds of keyboard
-: wKbdH 33 8 * ;      # 33 px/key * 8 rows
+: wKbdH 33 6 * ;      # 33 px/key * 8 rows
 : wKbdY0 wScreenY wKbdH - ;
 : wKbdY1 wScreenY 1 - ;
 

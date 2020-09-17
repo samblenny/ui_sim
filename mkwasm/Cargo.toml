@@ -1,0 +1,16 @@
+[package]
+name = "mkwasm"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+#path = "lib.rs"
+
+[profile.release]
+incremental = false
+lto = true
+
+[dependencies]
+kbddrv = { path = "../kbddrv" }
