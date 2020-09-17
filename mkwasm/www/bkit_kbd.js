@@ -128,8 +128,12 @@ const KeyCodeLookupTable = {
     ShiftRight: 'P52',
     AltLeft: 'P53',
     MetaLeft: 'P54',
+    ControlLeft: 'P54',
+    Comma: 'P54',
     Space: 'P55',
     MetaRight: 'P56',
+    ControlRight: 'P56',
+    Period: 'P56',
     AltRight: 'P57',
 };
 
