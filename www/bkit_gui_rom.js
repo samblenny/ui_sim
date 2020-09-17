@@ -59,7 +59,6 @@ export const KbdAzerty = `
 
 : kAzerty
 kSetStyle
-kNav
 kFKeys
 (1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
 kRowOfTen
@@ -74,7 +73,6 @@ kBottomRow
 
 : kAzertyAltL
 kSetStyle
-kNav
 kFKeysAltL
 (§) () () () ([) (]) () (_)  (') (") P22
 kRowOfTen
@@ -89,7 +87,6 @@ kBottomRowAltL
 
 : kAzertyAltR
 kSetStyle
-kNav
 kFKeysAltR
 (à)  (é) (è) (ê) (() (\\)) (&) (*) («) (») P22
 kRowOfTen
@@ -108,7 +105,6 @@ export const KbdQwerty = `
 
 : kQwerty
 kSetStyle
-kNav
 kFKeys
 (1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
 kRowOfTen
@@ -123,7 +119,6 @@ kBottomRow
 
 : kQwertyAlt
 kSetStyle
-kNav
 kFKeysAlt
 ()  ()  ()  ()  ()  ()  ()  ()  ()   ()  P22
 kRowOfTen

@@ -28,6 +28,7 @@ function initialize() {
         } else {
             list.add(c);
         }
+        backlightBtn.blur();
     });
 
     // Configure on-screen keyboard
@@ -39,6 +40,7 @@ function initialize() {
         } else if (e.target.value === 'Qwerty') {
             kbd.showQwertyOSK(keyboard);
         }
+        kbdSelect.blur();
     });
 
     // Hard Reset:  doHardReset(),
