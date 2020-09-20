@@ -1,5 +1,15 @@
 "use strict";
 
+// Callbacks for sending keyscan codes into a message queue
+var keyPressFn = null;
+var keyReleaseFn = null;
+
+// Let importer set callbacks for press & release keyscan code events
+export function setKeyscanCallbacks(pressCallback, releaseCallback) {
+    keyPressFn = pressCallback;
+    keyReleaseFn = releaseCallback;
+}
+
 // Listen for keyboard events (from OS keyboard)
 export function addKeyboardListener(element) {
     element.addEventListener('keydown', doKeydown);
@@ -26,12 +36,15 @@ function doKeydown(e) {
             // Prevent actions normally triggered by spacebar and arrow keys
             e.preventDefault();
         }
-        console.log(scancode + 'p');
+        if (keyPressFn) {
+            keyPressFn(scancode);
+        }
         let onscreenKey = document.getElementById(scancode);
         if (onscreenKey) {
             onscreenKey.classList.add('glow');
         }
     } else {
+        // Log unrecognized code to make keymap changes easier
         console.log('unrecognized keydown:', e.code);
     }
 }
@@ -45,13 +58,15 @@ function doKeyup(e) {
             // Prevent actions normally triggered by spacebar and arrow keys
             e.preventDefault();
         }
-        console.log(scancode + 'r');
+        if (keyReleaseFn) {
+            keyReleaseFn(scancode);
+        }
         let onscreenKey = document.getElementById(scancode);
         if (onscreenKey) {
             onscreenKey.classList.remove('glow');
         }
     } else {
-        console.log('unrecognized keyup:', e.code);
+        // Ignore this
     }
 }
 
@@ -290,7 +305,9 @@ function textC(text, x, y, classAttr) {
 // Handle key press and show visual feedback
 function doSvgKeyPress(e) {
     e.target.classList.add('glow');
-    console.log("press:", e.target.id);
+    if (keyPressFn) {
+        keyPressFn(e.target.id);
+    }
 }
 
 // Handle possible key release event and remove visual feedback if needed.
@@ -299,14 +316,16 @@ function doSvgKeyPress(e) {
 function doSvgKeyMaybeRelease(e) {
     if (e.target.classList.contains('glow')) {
         e.target.classList.remove('glow');
-        console.log("release:", e.target.id);
+        if (keyReleaseFn) {
+            keyReleaseFn(e.target.id);
+        }
     }
 }
 
 // Respond to a key that has been tapped or clicked
 function doSvgClick(e) {
+    // Probably the doSvgKeyMaybeRelease took care of this, but make sure
     e.target.classList.remove('glow');
-    console.log("click: ", e.target.id);
 }
 
 // Compute rectangle bounds on key grid given key's column, row, and width

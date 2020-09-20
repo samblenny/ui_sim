@@ -1,17 +1,13 @@
 #![no_std]
 extern crate kbddrv;
 
-// Always include IPC shared memory buffer stuff
-pub mod ipc_mem;
+// Wasm shared memory exports
+pub static mut KBD_OVERLAY: u32 = 65;
+pub static mut UTF8_BUF: [u8; 30] = [0; 30];
+pub static mut UTF8_BUF_LAST: u32 = 0;
 
-pub mod constants {
-    pub const BUF_SIZE: usize = 150;
-}
-
-// For building wasm32 no_std, add panic handler and imports/exports for
-// functions used in IPC between WebAssembly and Javascript. This panic handler
-// cannot be included for `cargo test` because it would conflict with the test
-// panic handler.
+// For building wasm32 no_std, add panic handler. This panic handler would
+// conflict with the text panic handler if included during `cargo test`.
 #[cfg(target_arch = "wasm32")]
 pub mod no_std_bindings;
 
@@ -23,136 +19,102 @@ use no_std_bindings::js_log_trace;
 #[cfg(not(target_arch = "wasm32"))]
 unsafe fn js_log_trace(_: i32) {}
 
-// Writer decouples query response formatting from stream IO implementation details.
-pub trait Writer {
-    fn write(&mut self, message: &str);
-    fn trace(&mut self, trace_code: i32);
-    fn to_s(&self) -> &str;
-}
-
-// BufWriter is a Writer for string slices backed by stack allocated [u8].
-pub struct BufWriter {
-    buf: [u8; constants::BUF_SIZE],
-    buf_pos: usize,
-}
-impl BufWriter {
-    // Return empty buffer ready for use.
-    pub fn new() -> BufWriter {
-        BufWriter {
-            buf: [0; constants::BUF_SIZE],
-            buf_pos: 0,
-        }
+/// Respond to key press event
+#[no_mangle]
+pub extern "C" fn keydown(key_index: i32) {
+    if key_index < 0 || key_index >= char_map::SIZE as i32 {
+        unsafe {js_log_trace(-1);}
+        return;
     }
-    // Truncate buffer position back to 0 bytes.
-    pub fn rewind(&mut self) {
-        self.buf_pos = 0;
-    }
-}
-impl Writer for BufWriter {
-    // Append message to buffer
-    fn write(&mut self, message: &str) {
-        for b in message.bytes() {
-            // TODO: better strategy for overflow (vs. silently drop extra)
-            if self.buf_pos < self.buf.len() {
-                self.buf[self.buf_pos] = b;
-                self.buf_pos += 1;
+    unsafe {
+        let c = char_map::AZERTY_BASE[key_index as usize];
+        if c != '\0' {
+            if UTF8_BUF_LAST as usize + 1 < UTF8_BUF.len() {
+                // Append until buffer is full
+                UTF8_BUF_LAST += 1;
+                UTF8_BUF[UTF8_BUF_LAST as usize] = c as u8;
+            }  else {
+                // When buffer is full, discard oldest, then append
+                for i in 0..UTF8_BUF.len()-1 {
+                    UTF8_BUF[i] = UTF8_BUF[i+1];
+                }
+                UTF8_BUF[UTF8_BUF.len()-1] = c as u8;
             }
         }
     }
-
-    // Ignore traces
-    fn trace(&mut self, _: i32) {}
-
-    // Return string slice of buffer contents.
-    fn to_s(&self) -> &str {
-        match core::str::from_utf8(&self.buf[0..self.buf_pos]) {
-            Ok(s) => &s,
-            Err(_) => &"", // TODO: handle mal-formed utf8 strings better
-        }
-    }
 }
 
-// IPCWriter is a Writer for UTF-8 bytes backed by static IPC shared memory.
-struct IPCWriter {}
-impl Writer for IPCWriter {
-    fn write(&mut self, message: &str) {
-        ipc_mem::write(message);
-    }
-
-    // Log trace codes to the javascript console to help debug control flow.
-    fn trace(&mut self, trace_code: i32) {
-        unsafe {
-            js_log_trace(trace_code);
-        }
-    }
-
-    fn to_s(&self) -> &str {
-        ipc_mem::out_to_s()
-    }
-}
-
-// Receive query message, search, write results to IPC out buffer.
-// This is for calling from Javascript with WebAssembly.
-// Returns: number of bytes written to IPC out buffer.
+/// Respond to key release event
 #[no_mangle]
-pub extern "C" fn query_shared_mem_ipc(n: usize) -> usize {
-    let mut ipc_writer = IPCWriter {};
-    let qry = ipc_mem::get_query(n);
-    ipc_mem::rewind();
-    crate::look_up(&qry, &mut ipc_writer);
-    ipc_mem::position()
+pub extern "C" fn keyup(key_index: i32) {
+    let _ = key_index;
 }
 
-pub fn look_up(query_bytes: &str, sink: &mut impl Writer) {
-    sink.write(&query_bytes);
+mod char_map {
+    pub const SIZE: usize = 54;
+    pub const AZERTY_BASE: [char; SIZE] = [
+        '\0', // P2  Up
+        '\0', // P5  Left
+        '\0', // PC  Click
+        '\0', // P6  Right
+        '\0', // P3  F1
+        '\0', // P4  F2
+        '\0', // P9  Down
+        '\0', // P7  F3
+        '\0', // P8  F4
+        '1',  // P13 1
+        '2',  // P14 2
+        '3',  // P15 3
+        '4',  // P16 4
+        '5',  // P17 5
+        '6',  // P18 6
+        '7',  // P19 7
+        '8',  // P20 8
+        '9',  // P21 9
+        '0',  // P22 0
+        'a',  // P23 Upper letter row
+        'z',  // P24
+        'e',  // P25
+        'r',  // P26
+        't',  // P27
+        'y',  // P28
+        'u',  // P29
+        'i',  // P30
+        'o',  // P31
+        'p',  // P32
+        'q',  // P33 Home letter row
+        's',  // P34
+        'd',  // P35
+        'f',  // P36
+        'g',  // P37
+        'h',  // P38
+        'j',  // P39
+        'k',  // P40
+        'l',  // P41
+        'm',  // P42
+        '\0', // P43 Lower letter row
+        'w',  // P44
+        'x',  // P45
+        'c',  // P46
+        'v',  // P47
+        'b',  // P48
+        'n',  // P49
+        ':',  // P50
+        ';',  // P51
+        '\0', // P52
+        '\0', // P53 ShiftL
+        ',',  // P54 Comma
+        ' ',  // P55 Space
+        '.',  // P56 Period
+        '\0', // P57 ShiftR
+    ];
 }
 
 #[cfg(test)]
 mod tests {
-    use super::constants;
-    use super::ipc_mem;
-
-    // Send query string to ime-engine; THIS IS NOT THREAD SAFE.
-    // Returns: reply string.
-    fn query(qry: &str) -> &str {
-        // Encode UTF-8 bytes to inbox buffer
-        let mut i: usize = 0;
-        unsafe {
-            for b in qry.bytes() {
-                if i < constants::BUF_SIZE {
-                    ipc_mem::IN[i] = b;
-                    i += 1;
-                }
-            }
-        }
-        // Run query
-        let ipc_query_len = i;
-        let _ = crate::query_shared_mem_ipc(ipc_query_len);
-        // Decode reply string as UTF-8 bytes from IPC shared mem OUT buffer
-        let ipc_reply = ipc_mem::out_to_s();
-        ipc_reply
-    }
 
     #[test]
-    fn min_query() {
-        assert_eq!("", query(&""));
-    }
-
-    #[test]
-    fn max_query() {
-        let buf_max = ['A' as u8; constants::BUF_SIZE];
-        let qry_max = core::str::from_utf8(&buf_max).unwrap();
-        // This should be passed through unchanged as ASCII
-        assert_eq!(qry_max, query(qry_max));
-    }
-
-    #[test]
-    fn max_query_plus_1_truncate() {
-        let buf_max = ['A' as u8; constants::BUF_SIZE];
-        let qry_max = core::str::from_utf8(&buf_max).unwrap();
-        let buf_1_too_big = ['A' as u8; constants::BUF_SIZE + 1];
-        let qry_1_too_big = core::str::from_utf8(&buf_1_too_big).unwrap();
-        // This should truncate the query
-        assert_eq!(qry_max, query(qry_1_too_big));
+    fn one() {
+        assert_eq!(1, 1);
     }
 }

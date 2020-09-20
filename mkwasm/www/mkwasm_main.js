@@ -1,19 +1,18 @@
 "use strict";
-import { loadIMEEngineWasm, syncMessages } from './mkwasm_wasm.js';
+import * as wasm from './mkwasm_wasm.js';
 import * as bkit_gui from './bkit_gui.js';
 import * as rom from './bkit_gui_rom.js';
 import * as kbd from './bkit_kbd.js';
 
-const wasmModule = "mkwasm.wasm"
 const backlightBtn = document.querySelector('#backlightBtn');
 const kbdSelect = document.querySelector('#kbdSelect');
 const keyboard = document.querySelector('#keyboard');
 const screen = document.querySelector('#screen');
 var cachedRomPages = {};
 
-loadIMEEngineWasm(wasmModule);
-
-window.requestAnimationFrame(initialize);
+// Load wasm module with callback to continue initialization
+let loadSuccessCallback = initialize;
+wasm.loadModule(loadSuccessCallback);
 
 // Load data and add event listeners
 function initialize() {
@@ -32,6 +31,15 @@ function initialize() {
     });
 
     // Configure on-screen keyboard
+    let pressFn = sc => {
+        wasm.keydown(sc);
+        let note = wasm.utf8Buf();
+        doRepaintWithEventCode(`: note (${note}) ;`); 
+    };
+    let releaseFn = sc => {
+        wasm.keyup(sc);
+    };
+    kbd.setKeyscanCallbacks(pressFn, releaseFn);
     kbd.addKeyboardListener(document);
     kbd.showAzertyOSK(keyboard);
     kbdSelect.addEventListener('change', e => {
