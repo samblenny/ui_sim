@@ -33,9 +33,7 @@ function initialize() {
     // Configure on-screen keyboard
     let pressFn = sc => {
         wasm.keydown(sc);
-        let note = wasm.utf8Buf();
-        let kbd = KbdOverlay[wasm.keyMapIndex()];
-        doRepaintWithEventCode(`: note (${note}) ; : kbd ${kbd} ;`); 
+        repaintLCD();
     };
     let releaseFn = sc => {
         wasm.keyup(sc);
@@ -46,8 +44,12 @@ function initialize() {
     kbdSelect.addEventListener('change', e => {
         if (e.target.value === 'Azerty') {
             kbd.showAzertyOSK(keyboard);
+            wasm.setLayoutAzerty();
+            repaintLCD();
         } else if (e.target.value === 'Qwerty') {
             kbd.showQwertyOSK(keyboard);
+            wasm.setLayoutQwerty();
+            repaintLCD();
         }
         kbdSelect.blur();
     });
@@ -65,12 +67,21 @@ function initialize() {
     doHardReset();
 }
 
+function repaintLCD() {
+    // Escape \ to \\ and ) to \) for gui toolkit rom interpreter
+    let rawNote = wasm.utf8Buf();
+    let note = rawNote.split('\\').join('\\\\').split(')').join('\\)');
+    let kbd = KbdOverlay[wasm.keyMapIndex()];
+    doRepaintWithEventCode(`: note (${note}) ; : kbd ${kbd} ;`); 
+}
+
 // Keyboard overlay index to rom function lookup table
 const KbdOverlay = [
     'kAzerty',
     'kAzertyAltL',
     'kAzertyAltR',
     'kQwerty',
+    'kQwertyAlt',
 ];
 
 // Load ROM pages and render with default slot values

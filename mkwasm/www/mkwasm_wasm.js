@@ -31,6 +31,8 @@ var wasmUtf8BufSize
 var wasmKeyup;
 var wasmKeydown;
 var wasmKeyMapIndex;
+var wasmSetLayoutAzerty;
+var wasmSetLayoutQwerty;
 var wasmInstanceReady = false;
 
 // UTF8 decoder
@@ -45,6 +47,8 @@ function initSharedMemBindings(result) {
     wasmKeyup = exports.keyup;
     wasmKeydown = exports.keydown;
     wasmKeyMapIndex = exports.key_map_index;
+    wasmSetLayoutAzerty = exports.set_layout_azerty;
+    wasmSetLayoutQwerty = exports.set_layout_qwerty;
     wasmInstanceReady = true;
 }
 
@@ -72,6 +76,16 @@ export function utf8Buf() {
 export function keyMapIndex() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     return wasmKeyMapIndex();
+}
+
+export function setLayoutAzerty() {
+    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
+    wasmSetLayoutAzerty();
+}
+
+export function setLayoutQwerty() {
+    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
+    wasmSetLayoutQwerty();
 }
 
 // Lookup table to translate from keycode to u8

@@ -62,6 +62,18 @@ pub extern "C" fn key_map_index() -> i32 {
     kbd::cur_map_index()
 }
 
+/// Substitute for using (non-existant) menu to select azerty keyboard layout
+#[no_mangle]
+pub extern "C" fn set_layout_azerty() {
+    kbd::set_layout(kbd::Layout::Azerty);
+}
+
+/// Substitute for using (non-existant) menu to select qwerty keyboard layout
+#[no_mangle]
+pub extern "C" fn set_layout_qwerty() {
+    kbd::set_layout(kbd::Layout::Qwerty);
+}
+
 #[cfg(test)]
 mod tests {
 
