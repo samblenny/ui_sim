@@ -77,22 +77,42 @@ pub fn set_layout(lo: Layout) {
 
 /// Handle a modifier key press event
 pub fn modkey_down(r: &R) {
+    let layout;
     let mut modkey;
     unsafe {
+        layout = CUR_LAYOUT;
         modkey = CUR_MODKEY;
     }
-    match r {
-        R::AltL => match modkey {
-            ModKey::Base => modkey = ModKey::AltL,
-            ModKey::AltL => modkey = ModKey::Base,
-            ModKey::AltR => modkey = ModKey::AltL,
+    match layout {
+        Layout::Azerty => match r {
+            // Azerty has separate mappings for AltL and AltR
+            R::AltL => match modkey {
+                ModKey::Base => modkey = ModKey::AltL,
+                ModKey::AltL => modkey = ModKey::Base,
+                ModKey::AltR => modkey = ModKey::AltL,
+            },
+            R::AltR => match modkey {
+                ModKey::Base => modkey = ModKey::AltR,
+                ModKey::AltL => modkey = ModKey::AltR,
+                ModKey::AltR => modkey = ModKey::Base,
+            },
+            _ => trace::log_code(trace::Code::BadModkeyDownR),
         },
-        R::AltR => match modkey {
-            ModKey::Base => modkey = ModKey::AltR,
-            ModKey::AltL => modkey = ModKey::AltR,
-            ModKey::AltR => modkey = ModKey::Base,
+        Layout::Qwerty => match r {
+            // Qwerty only has one Alt mapping, so AltL can turn AltR off and
+            // vice versa
+            R::AltL => match modkey {
+                ModKey::Base => modkey = ModKey::AltL,
+                ModKey::AltL => modkey = ModKey::Base,
+                ModKey::AltR => modkey = ModKey::Base,
+            },
+            R::AltR => match modkey {
+                ModKey::Base => modkey = ModKey::AltR,
+                ModKey::AltL => modkey = ModKey::Base,
+                ModKey::AltR => modkey = ModKey::Base,
+            },
+            _ => trace::log_code(trace::Code::BadModkeyDownR),
         },
-        _ => trace::log_code(trace::Code::BadModkeyDownR),
     }
     unsafe {
         CUR_MODKEY = modkey;
