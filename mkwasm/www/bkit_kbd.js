@@ -246,7 +246,7 @@ function keyRect(keyId, col, row, width) {
     r.setAttribute('width', w);
     r.setAttribute('height', h);
     r.addEventListener('mousedown', doSvgKeyPress);
-    r.addEventListener('touchstart', doSvgKeyPress, {passive: true});
+    r.addEventListener('touchstart', doSvgKeyTouch, {passive: false});
     r.addEventListener('mouseup', doSvgKeyMaybeRelease);
     r.addEventListener('touchend', doSvgKeyMaybeRelease);
     r.addEventListener('mouseout', doSvgKeyMaybeRelease);
@@ -308,6 +308,12 @@ function doSvgKeyPress(e) {
     if (keyPressFn) {
         keyPressFn(e.target.id);
     }
+}
+
+// Handle key press and show visual feedback
+function doSvgKeyTouch(e) {
+    e.preventDefault();
+    doSvgKeyPress(e);
 }
 
 // Handle possible key release event and remove visual feedback if needed.
