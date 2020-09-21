@@ -27,7 +27,7 @@ export function loadModule(callback) {
 // Bindings for shared memory and functions
 var wasmShared;
 var wasmUtf8Buf;
-var wasmUtf8BufSize
+var wasmUtf8BufEnd;
 var wasmKeyup;
 var wasmKeydown;
 var wasmKeyMapIndex;
@@ -43,7 +43,7 @@ function initSharedMemBindings(result) {
     let exports = result.instance.exports;
     wasmShared = new Uint8Array(exports.memory.buffer);
     wasmUtf8Buf = exports.utf8_buf_ptr();
-    wasmUtf8BufSize = exports.utf8_buf_size();
+    wasmUtf8BufEnd = exports.utf8_buf_end;
     wasmKeyup = exports.keyup;
     wasmKeydown = exports.keydown;
     wasmKeyMapIndex = exports.key_map_index;
@@ -70,7 +70,10 @@ export function keyup(keyCode) {
 
 export function utf8Buf() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    return decoder.decode(wasmShared.subarray(wasmUtf8Buf, wasmUtf8Buf + wasmUtf8BufSize));
+    let utf8Len = wasmUtf8BufEnd();
+    let bytes = wasmShared.subarray(wasmUtf8Buf, wasmUtf8Buf + utf8Len);
+    let utf8Str = decoder.decode(bytes);
+    return utf8Str;
 }
 
 export function keyMapIndex() {

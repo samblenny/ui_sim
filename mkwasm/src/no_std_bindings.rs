@@ -27,6 +27,6 @@ pub unsafe extern "C" fn utf8_buf_ptr() -> *const u8 {
     super::UTF8_BUF.as_ptr()
 }
 #[no_mangle]
-pub unsafe extern "C" fn utf8_buf_size() -> usize {
-    super::UTF8_BUF.len()
+pub unsafe extern "C" fn utf8_buf_end() -> i32 {
+    super::UTF8_BUF_END as i32
 }

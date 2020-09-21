@@ -13,9 +13,14 @@ mod trace;
 /// For keyboard configuration and state
 mod kbd;
 
-/// Buffer for IPC with javascript using pointer into wasm shared memory
-pub static mut UTF8_BUF: [u8; 30] = [0; 30];
-pub static mut UTF8_BUF_LAST: u32 = 0;
+/// Buffers for IPC with javascript using pointer into wasm shared memory
+const MAX_CHARS: usize = 20;
+const CHAR_BUF_SIZE: usize = MAX_CHARS;
+const UTF8_BUF_SIZE: usize = MAX_CHARS * 4;
+static mut CHAR_BUF: [char; CHAR_BUF_SIZE] = ['\0'; CHAR_BUF_SIZE];
+static mut CHAR_BUF_END: usize = 0;
+pub static mut UTF8_BUF: [u8; UTF8_BUF_SIZE] = [0; UTF8_BUF_SIZE];
+pub static mut UTF8_BUF_END: usize = 0;
 
 /// Respond to key press event
 #[no_mangle]
@@ -36,17 +41,26 @@ pub extern "C" fn keydown(key_index: i32) {
 /// Accumulate buffer of recently typed characters
 fn buffer_keystroke(c: char) {
     unsafe {
-        if (UTF8_BUF_LAST as usize) + 1 < UTF8_BUF.len() {
-            // Append until buffer is full
-            UTF8_BUF_LAST += 1;
-            UTF8_BUF[UTF8_BUF_LAST as usize] = c as u8;
+        // Update the character buffer
+        if CHAR_BUF_END < CHAR_BUF_SIZE {
+            // Append character when character buffer is not yet full
+            CHAR_BUF[CHAR_BUF_END] = c;
+            CHAR_BUF_END += 1;
         } else {
             // When buffer is full, discard oldest, then append
-            for i in 0..UTF8_BUF.len() - 1 {
-                UTF8_BUF[i] = UTF8_BUF[i + 1];
+            for i in 0..CHAR_BUF_SIZE - 1 {
+                CHAR_BUF[i] = CHAR_BUF[i + 1];
             }
-            UTF8_BUF[UTF8_BUF.len() - 1] = c as u8;
+            CHAR_BUF[CHAR_BUF_SIZE - 1] = c;
         }
+        // Encode the character buffer as utf-8 into the utf8 buffer
+        let mut end = 0;
+        for c in CHAR_BUF[0..CHAR_BUF_END].iter() {
+            let dest = &mut UTF8_BUF[end..end + 4];
+            let result = c.encode_utf8(dest);
+            end += result.len();
+        }
+        UTF8_BUF_END = end;
     }
 }
 
