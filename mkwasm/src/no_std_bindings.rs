@@ -10,11 +10,9 @@ extern "C" {
 
 /// Panic Handler for no_std.
 ///
-/// Rust semantics require panic handler to never return, and docs for embedded
-/// no_std rust suggest to accomplish that with loop {}. But, loop {} can peg
-/// the CPU at 100% and make browser UI unresponsive. Better alternative is to
-/// use WebAssembly unreachable trap instruction (available in stable since
-/// late 2019).
+/// Rust docs suggest `loop {}`, but that can max CPU and make browser UI
+/// unresponsive. WebAssembly unreachable trap instruction is better (available
+/// in stable since late 2019).
 use core::panic::PanicInfo;
 #[panic_handler]
 pub fn panic(_panic_info: &PanicInfo) -> ! {
@@ -23,11 +21,7 @@ pub fn panic(_panic_info: &PanicInfo) -> ! {
     }
 }
 
-/// Export pointers so js can find rust static vars in wasm VM memory buffer
-#[no_mangle]
-pub unsafe extern "C" fn kbd_overlay_ptr() -> *const u32 {
-    &super::KBD_OVERLAY
-}
+/// Export pointer and size of shared buffer for javascript
 #[no_mangle]
 pub unsafe extern "C" fn utf8_buf_ptr() -> *const u8 {
     super::UTF8_BUF.as_ptr()

@@ -34,7 +34,8 @@ function initialize() {
     let pressFn = sc => {
         wasm.keydown(sc);
         let note = wasm.utf8Buf();
-        doRepaintWithEventCode(`: note (${note}) ;`); 
+        let kbd = KbdOverlay[wasm.keyMapIndex()];
+        doRepaintWithEventCode(`: note (${note}) ; : kbd ${kbd} ;`); 
     };
     let releaseFn = sc => {
         wasm.keyup(sc);
@@ -63,6 +64,14 @@ function initialize() {
     // Note:        doRepaintWithEventCode(`: note (${text}) ;`);
     doHardReset();
 }
+
+// Keyboard overlay index to rom function lookup table
+const KbdOverlay = [
+    'kAzerty',
+    'kAzertyAltL',
+    'kAzertyAltR',
+    'kQwerty',
+];
 
 // Load ROM pages and render with default slot values
 function doHardReset() {

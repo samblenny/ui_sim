@@ -26,11 +26,11 @@ export function loadModule(callback) {
 
 // Bindings for shared memory and functions
 var wasmShared;
-var wasmKbdOverlay;
 var wasmUtf8Buf;
 var wasmUtf8BufSize
 var wasmKeyup;
 var wasmKeydown;
+var wasmKeyMapIndex;
 var wasmInstanceReady = false;
 
 // UTF8 decoder
@@ -40,18 +40,16 @@ let decoder = new TextDecoder();
 function initSharedMemBindings(result) {
     let exports = result.instance.exports;
     wasmShared = new Uint8Array(exports.memory.buffer);
-    wasmKbdOverlay = exports.kbd_overlay_ptr();
     wasmUtf8Buf = exports.utf8_buf_ptr();
     wasmUtf8BufSize = exports.utf8_buf_size();
     wasmKeyup = exports.keyup;
     wasmKeydown = exports.keydown;
+    wasmKeyMapIndex = exports.key_map_index;
     wasmInstanceReady = true;
 }
 
 export function keydown(keyCode) {
-    if (!wasmInstanceReady) {
-        throw "wasm instance is not ready";
-    }
+    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     let kci = KeyCodeIndex[keyCode];
     if (kci && kci >= 0) {
         wasmKeydown(KeyCodeIndex[keyCode]);
@@ -59,9 +57,7 @@ export function keydown(keyCode) {
 }
 
 export function keyup(keyCode) {
-    if (!wasmInstanceReady) {
-        throw "wasm instance is not ready";
-    }
+    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     let kci = KeyCodeIndex[keyCode];
     if (kci && kci >= 0) {
         wasmKeyup(KeyCodeIndex[keyCode]);
@@ -69,10 +65,13 @@ export function keyup(keyCode) {
 }
 
 export function utf8Buf() {
-    if (!wasmInstanceReady) {
-        throw "wasm instance is not ready";
-    }
+    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     return decoder.decode(wasmShared.subarray(wasmUtf8Buf, wasmUtf8Buf + wasmUtf8BufSize));
+}
+
+export function keyMapIndex() {
+    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
+    return wasmKeyMapIndex();
 }
 
 // Lookup table to translate from keycode to u8
