@@ -77,10 +77,13 @@ function initialize() {
         "Bat 25": e => doRepaintWithEventCode(": wBat sprBat25 ;"),
         "Bat 05": e => doRepaintWithEventCode(": wBat sprBat05 ;"),
         "Qwerty": e => doRepaintWithEventCode(": kbd kQwerty ;"),
+        "QwertyS": e => doRepaintWithEventCode(": kbd kQwertyS ;"),
         "QwertyAlt": e => doRepaintWithEventCode(": kbd kQwertyAlt ;"),
         "Azerty": e => doRepaintWithEventCode(": kbd kAzerty ;"),
+        "AzertyS": e => doRepaintWithEventCode(": kbd kAzertyS ;"),
         "AzertyAltL": e => doRepaintWithEventCode(": kbd kAzertyAltL ;"),
         "AzertyAltR": e => doRepaintWithEventCode(": kbd kAzertyAltR ;"),
+        "AzertyAltRS": e => doRepaintWithEventCode(": kbd kAzertyAltRS ;"),
     };
     for (const [tLabel, tCallback] of Object.entries(triggers)) {
         let b = document.createElement('button');

@@ -6,11 +6,11 @@ publish = false
 
 [lib]
 crate-type = ["cdylib"]
-#path = "lib.rs"
 
 [profile.release]
 incremental = false
 lto = true
 
 [dependencies]
-kbddrv = { path = "../kbddrv" }
+kbd = { path = "../kbd" }
+trace = { path = "../trace" }
