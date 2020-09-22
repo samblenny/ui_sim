@@ -78,9 +78,12 @@ function repaintLCD() {
 // Keyboard overlay index to rom function lookup table
 const KbdOverlay = [
     'kAzerty',
+    'kAzertyS',
     'kAzertyAltL',
     'kAzertyAltR',
+    'kAzertyAltRS',
     'kQwerty',
+    'kQwertyS',
     'kQwertyAlt',
 ];
 

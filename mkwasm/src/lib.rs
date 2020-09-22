@@ -29,6 +29,7 @@ pub extern "C" fn keydown(key_index: i32) {
         kbd::R::C(c) => buffer_keystroke(*c),
         kbd::R::AltL => kbd::modkey_down(result),
         kbd::R::AltR => kbd::modkey_down(result),
+        kbd::R::Shift => kbd::modkey_down(result),
         _ => (),
     }
 }
@@ -75,12 +76,14 @@ pub extern "C" fn key_map_index() -> i32 {
 #[no_mangle]
 pub extern "C" fn set_layout_azerty() {
     kbd::set_layout(kbd::Layout::Azerty);
+    kbd::set_modkey(kbd::ModKey::Base);
 }
 
 /// Substitute for using (non-existant) menu to select qwerty keyboard layout
 #[no_mangle]
 pub extern "C" fn set_layout_qwerty() {
     kbd::set_layout(kbd::Layout::Qwerty);
+    kbd::set_modkey(kbd::ModKey::Base);
 }
 
 #[cfg(test)]

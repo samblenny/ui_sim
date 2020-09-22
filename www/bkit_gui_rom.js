@@ -62,6 +62,20 @@ kSetStyle
 kFKeys
 (1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
 kRowOfTen
+(a) (z) (e) (r) (t) (y) (u) (i) (o) (p) P32
+kRowOfTen
+(q) (s) (d) (f) (g) (h) (j) (k) (l) (m) P42
+kRowOfTen
+()  (w) (x) (c) (v) (b) (n) (:) (;) ()  P52
+kRowOfTen
+kBottomRow
+;
+
+: kAzertyS
+kSetStyle
+kFKeys
+(1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
+kRowOfTen
 (A) (Z) (E) (R) (T) (Y) (U) (I) (O) (P) P32
 kRowOfTen
 (Q) (S) (D) (F) (G) (H) (J) (K) (L) (M) P42
@@ -98,12 +112,40 @@ kRowOfTen
 kRowOfTen
 kBottomRowAltR
 ;
+
+: kAzertyAltRS
+kSetStyle
+kFKeysAltR
+(À)  (É) (È) (Ê) (() (\\)) (&) (*) («) (») P22
+kRowOfTen
+(Æ)  (£) (€) (\`) ({) (})  (Ù) (Ï) (Œ) (%) P32
+kRowOfTen
+(@)  (ß) ($) (¤) (µ) (-)  (+) (\\\\) (|) (#) P42
+kRowOfTen
+(⌫) (<) (>) (Ç) (^) (=)  (~) (?) (!) (⏎) P52
+kRowOfTen
+kBottomRowAltR
+;
 `.trim();
 
 export const KbdQwerty = `
 # Draw QWERTY key maps (Base, Alt)
 
 : kQwerty
+kSetStyle
+kFKeys
+(1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
+kRowOfTen
+(q) (w) (e) (r) (t) (y) (u) (i) (o) (p) P32
+kRowOfTen
+(a) (s) (d) (f) (g) (h) (j) (k) (l) (⌫) P42
+kRowOfTen
+(!) (z) (x) (c) (v) (b) (n) (m) (?) (⏎) P52
+kRowOfTen
+kBottomRow
+;
+
+: kQwertyS
 kSetStyle
 kFKeys
 (1) (2) (3) (4) (5) (6) (7) (8) (9) (0) P22
@@ -224,15 +266,15 @@ export const KbdCommon = `
 : kLK4 -132 0 +xy key4 ;   # +x: (-4*33)
 
 : kFKeys
-  (F1) (F2) P4 key2 kLK2
-  (F3) (F4) P8 key2 kLK2
+  () (Shift) P4 key2 kLK2
+  () () P8 key2 kLK2
 ;
 : kFKeysAltL
   () ()     P4 key2 kLK2
   () (Ctrl) P8 key2 kLK2
 ;
 : kFKeysAltR
-  (Tab) () P4 key2 kLK2
+  (Tab) (Shift) P4 key2 kLK2
   ()    () P8 key2 kLK2
 ;
 : kFKeysAlt
