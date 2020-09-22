@@ -3,11 +3,6 @@
 ///    and wasm-pack.
 /// 2. Using #[no_mangle] on public functions is necessary for linking.
 
-#[link(wasm_import_module = "js")]
-extern "C" {
-    pub fn js_log_trace(code: i32);
-}
-
 /// Panic Handler for no_std.
 ///
 /// Rust docs suggest `loop {}`, but that can max CPU and make browser UI

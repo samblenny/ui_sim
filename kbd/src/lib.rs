@@ -1,7 +1,8 @@
-//! Model keyboard configuration and state
+#![no_std]
 #![allow(dead_code)]
+//! Model keyboard configuration and state
 
-use crate::trace;
+extern crate trace;
 
 pub static mut CUR_LAYOUT: Layout = Layout::Azerty;
 pub static mut CUR_MODKEY: ModKey = ModKey::Base;

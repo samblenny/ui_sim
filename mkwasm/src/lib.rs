@@ -1,17 +1,12 @@
 #![no_std]
-extern crate kbddrv;
+extern crate kbd;
+extern crate trace;
 
 /// For building wasm32 no_std, add panic handler and functions to let
 /// javascript check shared buffer pointers. This panic handler conflicts with
 /// test panic handler and therefore cannot be included during `cargo test`.
 #[cfg(target_arch = "wasm32")]
 pub mod no_std_bindings;
-
-/// For debug logging
-mod trace;
-
-/// For keyboard configuration and state
-mod kbd;
 
 /// Buffers for IPC with javascript using pointer into wasm shared memory
 const MAX_CHARS: usize = 20;

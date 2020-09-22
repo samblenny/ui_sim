@@ -40,4 +40,4 @@ real microkernel, on real hardware, once those are ready.
 
 - **img** (jpeg): Screenshots
 
-- **kbddrv** (rust): Keyboard layout drivers
+- **kbd** (rust): Keyboard drivers
