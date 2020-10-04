@@ -8,9 +8,9 @@ header{grid-area:H;color:#ddd;padding-left:20px;}
 #preOut{grid-area:P;background:#fff;padding:10px;font-size:9px;overflow:auto;}
 body{display:grid;
  grid:". . . . ." 20px
-      ". C . H ." auto
-      ". . . . ." 20px
-      ". P P P ." minmax(170px,auto)
+      ". C . H ." 150px
+      ". C . . ." 15px
+      ". C . P ." minmax(170px,auto)
       ". . . . ." 1fr
       / minmax(10px,1fr) auto 15px minmax(400px,auto) minmax(10px,1fr);}
 header h1{font-size:1.5em;color:#ddd;}

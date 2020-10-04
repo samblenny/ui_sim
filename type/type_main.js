@@ -14,7 +14,6 @@ function init(e) {
     imgSelect.addEventListener('change', e => {
         bitmap.onload = paintPngToCanvas;
         bitmap.src = e.target.value;
-        imgSelect.blur();
     });
     // Configure canvas click detector
     canvas.addEventListener('click', doCanvasClick);
@@ -33,8 +32,10 @@ function doCanvasClick(e) {
     let bbox = e.target.getBoundingClientRect();
     let x = e.clientX - Math.floor(bbox.left);
     let y = e.clientY - Math.floor(bbox.top);
-    // Grid is 16x16 boxes with fixed 1px gutter and border
-    let gridSize = Math.floor((canvas.width - 1) / 16);
+    const border = 2;
+    const columns = 16;
+    // Grid is 16x16 boxes of 24x24px or 30x30px with 2px gutters and borders
+    let gridSize = Math.floor((canvas.width - border) / columns);
     // Determine which grid box contains the click coordinate
     let row = Math.floor(y/gridSize);
     let col = Math.floor(x/gridSize);
@@ -42,7 +43,10 @@ function doCanvasClick(e) {
 }
 
 function convertGlyphBoxToText(row, col) {
-    if (row < 0 || row > 15 || col < 0 || col > 15) {
+    const border = 2;
+    const columns = 16;
+    const rows = columns;
+    if (row < 0 || row >= rows || col < 0 || col >= columns) {
         // Ignore clicks on grid border, etc.
         return;
     }
@@ -50,11 +54,11 @@ function convertGlyphBoxToText(row, col) {
     let h = canvas.height;
     var idat = ctx.getImageData(0, 0, w, h);
     // Get pixels for grid cell, converting from RGBA to 1-bit
-    let grid = Math.floor((w - 1) / 16);
+    let grid = Math.floor((w - border) / columns);
     let pxMtrx = [];
-    for (let y=(row*grid)+1; y<(row+1)*grid; y++) {
+    for (let y=(row*grid)+border; y<(row+1)*grid; y++) {
         let row = [];
-        for (let x=(col*grid)+1; x<(col+1)*grid; x++) {
+        for (let x=(col*grid)+border; x<(col+1)*grid; x++) {
             let offset = ((w * y) + x) * 4;
             let r = idat.data[offset];
             row.push(r>0 ? 0 : 1);
