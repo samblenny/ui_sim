@@ -42,21 +42,29 @@ function doCanvasClick(e) {
     // Determine which grid box contains the click coordinate
     let row = Math.floor(y/gridSize);
     let col = Math.floor(x/gridSize);
-    preOut.textContent = convertGlyphBoxToText(row, col);
+    let pxMatrix = convertGlyphBoxToMatrix(row, col);
+    preOut.textContent = convertMatrixToText(pxMatrix, row, col);
 }
 
 function renderCharMap() {
-    let buf = [];
-    console.log(Object.keys(charMap).sort((a,b) => a-b));
+    let data_buf = [];
+    let str_buf = [];
     for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
         let v = charMap[k];
-        buf.push("\n" + v.chr);
-        buf.push(convertGlyphBoxToText(v.row, v.col));
+        v.start = data_buf.length;
+        let matrix = convertGlyphBoxToMatrix(v.row, v.col);
+        let pattern = convertMatrixToPattern(matrix);
+        Array.prototype.push.apply(data_buf, pattern);
+        let comment = `'${v.chr}' 0x${v.chr.charCodeAt().toString(16).toUpperCase()}`;
+        let rust = convertPatternToRust(pattern, comment);
+        str_buf.push(rust);
     }
-    preOut2.textContent = buf.join("\n");
+    str_buf.unshift(`const PATTERN_DATA: [u8; ${data_buf.length}] = [`);
+    str_buf.push("];");
+    preOut2.textContent = str_buf.join("\n");
 }
 
-function convertGlyphBoxToText(row, col) {
+function convertGlyphBoxToMatrix(row, col) {
     const border = 2;
     const columns = 16;
     const rows = columns;
@@ -69,7 +77,7 @@ function convertGlyphBoxToText(row, col) {
     var idat = ctx.getImageData(0, 0, w, h);
     // Get pixels for grid cell, converting from RGBA to 1-bit
     let grid = Math.floor((w - border) / columns);
-    let pxMtrx = [];
+    let pxMatrix = [];
     for (let y=(row*grid)+border; y<(row+1)*grid; y++) {
         let row = [];
         for (let x=(col*grid)+border; x<(col+1)*grid; x++) {
@@ -77,24 +85,92 @@ function convertGlyphBoxToText(row, col) {
             let r = idat.data[offset];
             row.push(r>0 ? 0 : 1);
         }
-        pxMtrx.push(row);
+        pxMatrix.push(row);
     }
     // Trim left whitespace
-    pxMtrx = matrixTranspose(pxMtrx);
-    while (pxMtrx.length>0 && pxMtrx[0].reduce((a, b) => a+b) == 0) {
-        pxMtrx.shift();
+    pxMatrix = matrixTranspose(pxMatrix);
+    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
+        pxMatrix.shift();
     }
     // Trim right whitespace
-    pxMtrx.reverse();
-    while (pxMtrx.length>0 && pxMtrx[0].reduce((a, b) => a+b) == 0) {
-        pxMtrx.shift();
+    pxMatrix.reverse();
+    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
+        pxMatrix.shift();
     }
-    pxMtrx.reverse();
-    pxMtrx = matrixTranspose(pxMtrx);
-    // Show trimmed result as one ASCII char per pixel
-    return pxMtrx.map(
+    pxMatrix.reverse();
+    pxMatrix = matrixTranspose(pxMatrix);
+    return pxMatrix;
+}
+
+// Return glyph as text with one ASCII char per pixel
+function convertMatrixToText(pxMatrix, row, col) {
+    let ascii = pxMatrix.map(
         row => row.map(col => col==0 ? "." : "#").join("")
-    ).join("\n") + `\nrow=${row}, col=${col}`;
+    ).join("\n");
+    let rowCol = `row=${row}, col=${col}`;
+    return `${ascii}\n${rowCol}`;
+}
+
+// Return pixel matrix as pattern packed into a byte array
+// pat[0]: pattern width in px
+// pat[1]: pattern height in px
+// pat[2]: y-offset from top of line (position properly relative to text baseline)
+// pat[3..2+w*h/8]: pixels packed into bytes
+function convertMatrixToPattern(pxMatrix) {
+    // Trim top whitespace and calculate y-offset
+    let yOffset = 0;
+    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
+        yOffset += 1;
+        pxMatrix.shift();
+    }
+    // Trim bottom whitespace
+    pxMatrix.reverse();
+    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
+        pxMatrix.shift();
+    }
+    pxMatrix.reverse();
+    // Pack trimmed pattern into a byte array
+    let patW = 0;
+    let patH = 0;
+    if (pxMatrix.length>0 && pxMatrix[0].length>0) {
+        patW = pxMatrix[0].length;
+        patH = pxMatrix.length;
+    }
+    let pattern = [patW, patH, yOffset];
+    let bufByte = 0;
+    let flushed = false;
+    for (let y=0; y<patH; y++) {
+        for (let x=0; x<patW; x++) {
+            bufByte = (bufByte << 1) | (pxMatrix[y][x]>0 ? 1 : 0);
+            flushed = false;
+            if ((y*patW + x) % 8 == 7) {
+                pattern.push(bufByte);
+                bufByte = 0;
+                flushed = true;
+            }
+        }
+    }
+    if (!flushed) {
+        let finalShift = 8 - ((patW * patH) % 8);
+        pattern.push(bufByte << finalShift);
+    }
+    return pattern
+}
+
+// Convert pattern to rust source code for part of an array of bytes
+function convertPatternToRust(pattern, comment) {
+    let patternStr = `    // ${comment}\n    `;
+    let bytesPerRow = 16;
+    for (let i=0; i<Math.ceil(pattern.length/bytesPerRow); i++) {
+        let start = i*bytesPerRow;
+        let end = Math.min(pattern.length, (i+1)*bytesPerRow);
+        let line = pattern.slice(start, end);
+        patternStr += line.join(", ") + ",";
+        if (end < pattern.length) {
+            patternStr += "\n    ";
+        }
+    }
+    return  patternStr;
 }
 
 function matrixTranspose(matrix) {
