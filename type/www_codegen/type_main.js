@@ -42,7 +42,7 @@ function doCanvasClick(e) {
     // Determine which grid box contains the click coordinate
     let row = Math.floor(y/gridSize);
     let col = Math.floor(x/gridSize);
-    let maxTrim = getMaxTrim(row, col);
+    let maxTrim = getMaxTrim(row, col, gridSize);
     let [pxMatrix, yOffset] = convertGlyphBoxToMatrix(row, col, maxTrim);
     preOut.textContent = convertMatrixToText(pxMatrix, yOffset, row, col);
 }
@@ -50,10 +50,13 @@ function doCanvasClick(e) {
 function renderCharMap() {
     let data_buf = [];
     let str_buf = [];
+    const border = 2;
+    const columns = 16;
+    let gridSize = Math.floor((canvas.width - border) / columns);
     for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
         let v = charMap[k];
         v.start = data_buf.length;
-        let maxTrim = getMaxTrim(v.row, v.col);
+        let maxTrim = getMaxTrim(v.row, v.col, gridSize);
         let [matrix, yOffset] = convertGlyphBoxToMatrix(v.row, v.col, maxTrim);
         let pattern = convertMatrixToPattern(matrix, yOffset);
         Array.prototype.push.apply(data_buf, pattern);
@@ -69,10 +72,14 @@ function renderCharMap() {
 }
 
 // Look up trim limits based on row & column in glyph grid
-function getMaxTrim(row, col) {
+function getMaxTrim(row, col, gridSize) {
     // Radio strength bars get trimmed to match bounds of three bars
     if (col === 0 && [5, 6, 7, 8, 9].includes(row)) {
         return [7, 5, 6, 4];
+    }
+    // Space gets 4px width and 2px height
+    if (col === 2 && row === 0) {
+        return [Math.floor((gridSize-3)/2), Math.floor((gridSize-5)/2)];
     }
     // Everything else gets default trim
     return null;
@@ -114,13 +121,13 @@ function convertGlyphBoxToMatrix(row, col, maxTrim) {
         maxTrim = [h, w, h, w];
     } else if (maxTrim.length === 1) {
         let [t] = maxTrim;
-        let maxTrim = [t, t, t, t];
+        maxTrim = [t, t, t, t];
     } else if (maxTrim.length === 2) {
         let [t, r] = maxTrim;
-        let maxTrim = [t, r, t, r];
+        maxTrim = [t, r, t, r];
     } else if (maxTrim.length === 3) {
         let [t, r, b] = maxTrim;
-        let maxTrim = [t, r, b, r];
+        maxTrim = [t, r, b, r];
     }
     // Trim left whitespace
     pxMatrix = matrixTranspose(pxMatrix);
