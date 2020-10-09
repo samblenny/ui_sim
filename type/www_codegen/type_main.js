@@ -42,8 +42,9 @@ function doCanvasClick(e) {
     // Determine which grid box contains the click coordinate
     let row = Math.floor(y/gridSize);
     let col = Math.floor(x/gridSize);
-    let pxMatrix = convertGlyphBoxToMatrix(row, col);
-    preOut.textContent = convertMatrixToText(pxMatrix, row, col);
+    let maxTrim = getMaxTrim(row, col);
+    let [pxMatrix, yOffset] = convertGlyphBoxToMatrix(row, col, maxTrim);
+    preOut.textContent = convertMatrixToText(pxMatrix, yOffset, row, col);
 }
 
 function renderCharMap() {
@@ -52,19 +53,39 @@ function renderCharMap() {
     for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
         let v = charMap[k];
         v.start = data_buf.length;
-        let matrix = convertGlyphBoxToMatrix(v.row, v.col);
-        let pattern = convertMatrixToPattern(matrix);
+        let maxTrim = getMaxTrim(v.row, v.col);
+        let [matrix, yOffset] = convertGlyphBoxToMatrix(v.row, v.col, maxTrim);
+        let pattern = convertMatrixToPattern(matrix, yOffset);
         Array.prototype.push.apply(data_buf, pattern);
-        let comment = `'${v.chr}' 0x${v.chr.charCodeAt().toString(16).toUpperCase()}`;
+        let index = `[${v.start}]`;
+        let hex = `0x${v.chr.charCodeAt().toString(16).toUpperCase()}`;
+        let comment = `${index}: '${v.chr}' ${hex}`;
         let rust = convertPatternToRust(pattern, comment);
         str_buf.push(rust);
     }
-    str_buf.unshift(`const PATTERN_DATA: [u8; ${data_buf.length}] = [`);
+    str_buf.unshift(`pub const DATA: [u8; ${data_buf.length}] = [`);
     str_buf.push("];");
     preOut2.textContent = str_buf.join("\n");
 }
 
-function convertGlyphBoxToMatrix(row, col) {
+// Look up trim limits based on row & column in glyph grid
+function getMaxTrim(row, col) {
+    // Radio strength bars get trimmed to match bounds of three bars
+    if (col === 0 && [5, 6, 7, 8, 9].includes(row)) {
+        return [7, 5, 6, 4];
+    }
+    // Everything else gets default trim
+    return null;
+}
+
+// Extract matrix of pixels from an image containing grid of glyphs
+// - row: source row in glyph grid
+// - col: source column in glyph grid
+// - maxTrim: [top right bottom left] upper limits in pixels of whitespace to
+//   trim from border around glyph in grid cell
+// Trim limits allow creation of patterns with whitespace borders, useful for
+// purposes like making the radio strength sprites have the same size pattern.
+function convertGlyphBoxToMatrix(row, col, maxTrim) {
     const border = 2;
     const columns = 16;
     const rows = columns;
@@ -87,28 +108,65 @@ function convertGlyphBoxToMatrix(row, col) {
         }
         pxMatrix.push(row);
     }
+    // Use default trim limits if none were given and expand partial
+    // top/right/bottom/left trim bounds in the manner of css margins
+    if (maxTrim === null || maxTrim === undefined || maxTrim.length < 1) {
+        maxTrim = [h, w, h, w];
+    } else if (maxTrim.length === 1) {
+        let [t] = maxTrim;
+        let maxTrim = [t, t, t, t];
+    } else if (maxTrim.length === 2) {
+        let [t, r] = maxTrim;
+        let maxTrim = [t, r, t, r];
+    } else if (maxTrim.length === 3) {
+        let [t, r, b] = maxTrim;
+        let maxTrim = [t, r, b, r];
+    }
     // Trim left whitespace
     pxMatrix = matrixTranspose(pxMatrix);
-    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
-        pxMatrix.shift();
-    }
+    let limit = maxTrim[3];
+    trimLeadingEmptyRows(pxMatrix, limit);
     // Trim right whitespace
     pxMatrix.reverse();
-    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
-        pxMatrix.shift();
-    }
+    limit = maxTrim[1];
+    trimLeadingEmptyRows(pxMatrix, limit);
     pxMatrix.reverse();
     pxMatrix = matrixTranspose(pxMatrix);
-    return pxMatrix;
+    // Trim top whitespace and calculate y-offset
+    let preTrimH = pxMatrix.length;
+    limit = maxTrim[0];
+    trimLeadingEmptyRows(pxMatrix, limit);
+    let yOffset = preTrimH - pxMatrix.length;
+    // Trim bottom whitespace
+    pxMatrix.reverse();
+    limit = maxTrim[2];
+    trimLeadingEmptyRows(pxMatrix, limit);
+    pxMatrix.reverse();
+    // Return matrix and yOffset
+    return [pxMatrix, yOffset];
+}
+
+// Trim whitespace rows from top of matrix, subject to limit
+// Side-effect: may change pxMatrix
+function trimLeadingEmptyRows(pxMatrix, limit) {
+    for (let i=0; i<limit; i++) {
+        if (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
+            pxMatrix.shift();
+        } else {
+            break;
+        }
+    }
 }
 
 // Return glyph as text with one ASCII char per pixel
-function convertMatrixToText(pxMatrix, row, col) {
+function convertMatrixToText(pxMatrix, yOffset, row, col) {
     let ascii = pxMatrix.map(
         row => row.map(col => col==0 ? "." : "#").join("")
     ).join("\n");
     let rowCol = `row=${row}, col=${col}`;
-    return `${ascii}\n${rowCol}`;
+    let pxW = pxMatrix.length>0 ? pxMatrix[0].length : 0;
+    let size = `w=${pxW}, h=${pxMatrix.length}, yOffset=${yOffset}`;
+    return `${ascii}\n\n${rowCol}, ${size}`;
 }
 
 // Return pixel matrix as pattern packed into a byte array
@@ -116,19 +174,7 @@ function convertMatrixToText(pxMatrix, row, col) {
 // pat[1]: pattern height in px
 // pat[2]: y-offset from top of line (position properly relative to text baseline)
 // pat[3..2+w*h/8]: pixels packed into bytes
-function convertMatrixToPattern(pxMatrix) {
-    // Trim top whitespace and calculate y-offset
-    let yOffset = 0;
-    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
-        yOffset += 1;
-        pxMatrix.shift();
-    }
-    // Trim bottom whitespace
-    pxMatrix.reverse();
-    while (pxMatrix.length>0 && pxMatrix[0].reduce((a, b) => a+b) == 0) {
-        pxMatrix.shift();
-    }
-    pxMatrix.reverse();
+function convertMatrixToPattern(pxMatrix, yOffset) {
     // Pack trimmed pattern into a byte array
     let patW = 0;
     let patH = 0;
