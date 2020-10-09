@@ -55,14 +55,31 @@ function renderCharMap() {
     let gridSize = Math.floor((canvas.width - border) / columns);
     for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
         let v = charMap[k];
+        let isUISprite = (0xE000 <= k) && (k <= 0xF8FF);
+        if (isUISprite && imgSelect.value != 'img/bold.png') {
+            // Skip sprites for regular.png and small.png
+            continue;
+        }
         v.start = data_buf.length;
         let maxTrim = getMaxTrim(v.row, v.col, gridSize);
         let [matrix, yOffset] = convertGlyphBoxToMatrix(v.row, v.col, maxTrim);
         let pattern = convertMatrixToPattern(matrix, yOffset);
         Array.prototype.push.apply(data_buf, pattern);
-        let index = `[${v.start}]`;
-        let hex = `0x${v.chr.charCodeAt().toString(16).toUpperCase()}`;
-        let comment = `${index}: '${v.chr}' ${hex}`;
+        let description = '';
+        if (isUISprite) {
+            // Unicode Private Use Area block (system fonts won't have a glyph)
+            description = v.name;
+        } else {
+            // Regular Unicode blocks (ok to assume system font has glyph)
+            if (v.chr === "\\") {
+                description = "'\\\\'";
+            } else if (v.chr === "'") {
+                description = "'\\''";
+            } else {
+                description = `'${v.chr}'`;
+            }
+        }
+        let comment = `[${v.start}]: ${v.hex} ${description}`;
         let rust = convertPatternToRust(pattern, comment);
         str_buf.push(rust);
     }
@@ -440,4 +457,19 @@ var charMap = {
     338: {row:14, col:12, hex: '152', chr: 'Œ'},
     339: {row:15, col:12, hex: '153', chr: 'œ'},
     8364: {row:11, col:13, hex: '20AC', chr: '€'},
+
+    // Unicode Private Use Area assignments for UI sprites
+    59136: {row:0, col:0, hex: 'E700', name: 'Battery_05'},
+    59137: {row:1, col:0, hex: 'E701', name: 'Battery_25'},
+    59138: {row:2, col:0, hex: 'E702', name: 'Battery_50'},
+    59139: {row:3, col:0, hex: 'E703', name: 'Battery_75'},
+    59140: {row:4, col:0, hex: 'E704', name: 'Battery_99'},
+    59141: {row:5, col:0, hex: 'E705', name: 'Radio_3'},
+    59142: {row:6, col:0, hex: 'E706', name: 'Radio_2'},
+    59143: {row:7, col:0, hex: 'E707', name: 'Radio_1'},
+    59144: {row:8, col:0, hex: 'E708', name: 'Radio_0'},
+    59145: {row:9, col:0, hex: 'E709', name: 'Radio_Off'},
+    59146: {row:13, col:0, hex: 'E70A', name: 'Shift_Arrow'},
+    59147: {row:14, col:0, hex: 'E70B', name: 'Backspace_Symbol'},
+    59148: {row:15, col:0, hex: 'E70C', name: 'Enter_Symbol'},
 };
