@@ -90,6 +90,7 @@ function renderCharMap() {
         'img/small.png': 'Small'
     }[imgSelect.value];
     let rustCode = `
+#![allow(dead_code)]
 //! ${fontName} Font
 
 ${buildCharMapIndex()}
@@ -151,8 +152,8 @@ const PRIVATE_USE_AREA: [u16; ${privateUseArea.length}] = [
         0xE700..=0xE70C => PRIVATE_USE_AREA[(c as usize) - 0xE700] as usize,`;
     let indexStr = `
 /// Return offset into DATA[] for start of pattern depicting glyph for character c
-pub fn getGlyphPatternOffset(c: char) -> usize {
-    match c {
+pub fn get_glyph_pattern_offset(c: char) -> usize {
+    match c as u32 {
         0x20..=0x7E => BASIC_LATIN[(c as usize) - 0x20] as usize,
         0xA0..=0xFF => LATIN_1[(c as usize) - 0xA0] as usize,
         0x152..=0x153 => LATIN_EXTENDED_A[(c as usize) - 0x152] as usize,
