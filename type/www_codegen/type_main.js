@@ -58,6 +58,7 @@ function renderCharMap() {
         let isUISprite = (0xE000 <= k) && (k <= 0xF8FF);
         if (isUISprite && imgSelect.value != 'img/bold.png') {
             // Skip sprites for regular.png and small.png
+            v.start = null;
             continue;
         }
         v.start = data_buf.length;
@@ -83,9 +84,106 @@ function renderCharMap() {
         let rust = convertPatternToRust(pattern, comment);
         str_buf.push(rust);
     }
-    str_buf.unshift(`pub const DATA: [u8; ${data_buf.length}] = [`);
-    str_buf.push("];");
-    preOut2.textContent = str_buf.join("\n");
+    let fontName = {
+        'img/bold.png': 'Bold',
+        'img/regular.png': 'Regular',
+        'img/small.png': 'Small'
+    }[imgSelect.value];
+    let rustCode = `
+//! ${fontName} Font
+
+${buildCharMapIndex()}
+
+/// Maximum height of glyph patterns in this bitmap typeface.
+/// This will be true: h + yOffset <= MAX_HEIGHT
+pub const MAX_HEIGHT: u8 = ${gridSize-border};
+
+/// Packed glyph pattern data.
+/// Record format:
+///  [offset+0]: ((w as u8) << 16) | ((h as u8) << 8) | (yOffset as u8)
+///  [offset+1..=ceil(w*h/32)]: packed 1-bit pixels; 0=clear, 1=set
+/// Pixels are packed in top to bottom, left to right order with MSB of first
+/// pixel word containing the top left pixel.
+///  w: Width of pattern in pixels
+///  h: Height of pattern in pixels
+///  yOffset: Vertical offset (pixels downward from top of line) to position
+///     glyph pattern properly relative to text baseline
+pub const DATA: [u32; ${data_buf.length}] = [
+${str_buf.join("\n")}
+];
+`;
+    preOut2.textContent = rustCode.trim();
+}
+
+// Return rust source for lookup table from char code to glyph pattern offset
+// in DATA array
+function buildCharMapIndex() {
+    // Unicode Blocks
+    let basicLatin = [];      // Block:     00..7E; Subset:     20..7E
+    let latin1 = [];          // Block:     80..FF; Subset:     A0..FF
+    let latinExtendedA = [];  // Block:   100..17F; Subset:   152..153
+    let currencySymbols = []; // Block: 20A0..20CF; Subset: 20AC..20AC
+    let privateUseArea = [];  // Block: E000..F8FF; Subset: E700..E70C
+    for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
+        let v = charMap[k];
+        if (v.start === null) {
+            continue;
+        }
+        if (0x20 <= k && k <= 0x7E) {
+            basicLatin[k-0x20] = v;
+        } else if (0xA0 <= k && k <= 0xFF) {
+            latin1[k-0xA0] = v;
+        } else if (0x152 <= k && k <= 0x153) {
+            latinExtendedA[k-0x152] = v;
+        } else if (0x20AC <= k && k <= 0x20AC) {
+            currencySymbols[k-0x20AC] = v;
+        } else if (0xE700 <= k && k <= 0xE70C) {
+            privateUseArea[k-0xE700] = v;
+        }
+    }
+    let puaIndexStr = privateUseArea.length<1 ? '' : `
+// Index to Unicode Private Use Area block glyph patterns (UI sprites)
+const PRIVATE_USE_AREA: [u16; ${privateUseArea.length}] = [
+    ${privateUseArea.map(v => v.start + ", // " + v.name).join("\n    ")}
+];
+`;
+    let puaMatchStr = privateUseArea.length<1 ? '' : `
+        0xE700..=0xE70C => PRIVATE_USE_AREA[(c as usize) - 0xE700] as usize,`;
+    let indexStr = `
+/// Return offset into DATA[] for start of pattern depicting glyph for character c
+pub fn getGlyphPatternOffset(c: char) -> usize {
+    match c {
+        0x20..=0x7E => BASIC_LATIN[(c as usize) - 0x20] as usize,
+        0xA0..=0xFF => LATIN_1[(c as usize) - 0xA0] as usize,
+        0x152..=0x153 => LATIN_EXTENDED_A[(c as usize) - 0x152] as usize,
+        0x20AC..=0x20AC => CURRENCY_SYMBOLS[(c as usize) - 0x20AC] as usize,${puaMatchStr}
+        _ => BASIC_LATIN[('?' as usize) - 0x20] as usize,
+    }
+}
+
+// Index to Unicode Basic Latin block glyph patterns
+const BASIC_LATIN: [u16; ${basicLatin.length}] = [
+    ${basicLatin.map(v => v.start + ", // '" + v.chr + "'").join("\n    ")}
+];
+
+// Index to Unicode Latin 1 block glyph patterns
+const LATIN_1: [u16; ${latin1.length}] = [
+    ${latin1.map(v => v.start + ", // '" + v.chr + "'").join("\n    ")}
+];
+
+// Index to Unicode Latin Extended A block glyph patterns
+const LATIN_EXTENDED_A: [u16; ${latinExtendedA.length}] = [
+    ${latinExtendedA.map(v => v.start + ", // '" + v.chr + "'").join("\n    ")}
+];
+
+// Index to Unicode Currency Symbols block glyph patterns
+const CURRENCY_SYMBOLS: [u16; ${currencySymbols.length}] = [
+    ${currencySymbols.map(v => v.start + ", // '" + v.chr +"'").join("\n    ")}
+];
+
+${puaIndexStr.trim()}
+`;
+    return indexStr.trim();
 }
 
 // Look up trim limits based on row & column in glyph grid
@@ -206,23 +304,23 @@ function convertMatrixToPattern(pxMatrix, yOffset) {
         patW = pxMatrix[0].length;
         patH = pxMatrix.length;
     }
-    let pattern = [patW, patH, yOffset];
-    let bufByte = 0;
+    let pattern = [(patW << 16) | (patH << 8) | yOffset];
+    let bufWord = 0;
     let flushed = false;
     for (let y=0; y<patH; y++) {
         for (let x=0; x<patW; x++) {
-            bufByte = (bufByte << 1) | (pxMatrix[y][x]>0 ? 1 : 0);
+            bufWord = (bufWord << 1) | (pxMatrix[y][x]>0 ? 1 : 0);
             flushed = false;
-            if ((y*patW + x) % 8 == 7) {
-                pattern.push(bufByte);
-                bufByte = 0;
+            if ((y*patW + x) % 32 == 31) {
+                pattern.push(bufWord);
+                bufWord = 0;
                 flushed = true;
             }
         }
     }
     if (!flushed) {
-        let finalShift = 8 - ((patW * patH) % 8);
-        pattern.push(bufByte << finalShift);
+        let finalShift = 32 - ((patW * patH) % 32);
+        pattern.push(bufWord << finalShift);
     }
     return pattern
 }
@@ -230,17 +328,26 @@ function convertMatrixToPattern(pxMatrix, yOffset) {
 // Convert pattern to rust source code for part of an array of bytes
 function convertPatternToRust(pattern, comment) {
     let patternStr = `    // ${comment}\n    `;
-    let bytesPerRow = 16;
-    for (let i=0; i<Math.ceil(pattern.length/bytesPerRow); i++) {
-        let start = i*bytesPerRow;
-        let end = Math.min(pattern.length, (i+1)*bytesPerRow);
+    let wordsPerRow = 8;
+    for (let i=0; i<Math.ceil(pattern.length/wordsPerRow); i++) {
+        let start = i*wordsPerRow;
+        let end = Math.min(pattern.length, (i+1)*wordsPerRow);
         let line = pattern.slice(start, end);
-        patternStr += line.join(", ") + ",";
+        patternStr += line.map(n => `0x${toHexWord(n)}`).join(", ") + ",";
         if (end < pattern.length) {
             patternStr += "\n    ";
         }
     }
     return  patternStr;
+}
+
+// Convert number to 8-digit hexidecimal string with left zero padding if needed
+function toHexWord(n) {
+    // Unsigned right shift (>>> 0) casts its answer to an unsigned 32-bit
+    // integer which ensures toString(16) gives an unsigned result
+    let hex = (n >>> 0).toString(16);
+    let pad = Math.max(8-hex.length, 0);
+    return "0".repeat(pad) + hex;
 }
 
 function matrixTranspose(matrix) {
