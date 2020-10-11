@@ -120,11 +120,13 @@ ${str_buf.join("\n")}
 // in DATA array
 function buildCharMapIndex() {
     // Unicode Blocks
-    let basicLatin = [];      // Block:     00..7E; Subset:     20..7E
-    let latin1 = [];          // Block:     80..FF; Subset:     A0..FF
-    let latinExtendedA = [];  // Block:   100..17F; Subset:   152..153
-    let currencySymbols = []; // Block: 20A0..20CF; Subset: 20AC..20AC
-    let privateUseArea = [];  // Block: E000..F8FF; Subset: E700..E70C
+    let basicLatin = [];         // Block:     00..7E; Subset:     20..7E
+    let latin1 = [];             // Block:     80..FF; Subset:     A0..FF
+    let latinExtendedA = [];     // Block:   100..17F; Subset:   152..153
+    let generalPunctuation = []; // Block: 2000..206F; Subset: 2018..2022
+    let currencySymbols = [];    // Block: 20A0..20CF; Subset: 20AC..20AC
+    let privateUseArea = [];     // Block: E000..F8FF; Subset: E700..E70C
+    let specials = [];           // Block: FFF0..FFFF; Subset: FFFD..FFFD
     for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
         let v = charMap[k];
         if (v.start === null) {
@@ -136,18 +138,22 @@ function buildCharMapIndex() {
             latin1[k-0xA0] = v;
         } else if (0x152 <= k && k <= 0x153) {
             latinExtendedA[k-0x152] = v;
+        } else if (0x2018 <= k && k <= 0x2022) {
+            generalPunctuation[k-0x2018] = v;
         } else if (0x20AC <= k && k <= 0x20AC) {
             currencySymbols[k-0x20AC] = v;
         } else if (0xE700 <= k && k <= 0xE70C) {
             privateUseArea[k-0xE700] = v;
+        } else if (0xFFFD <= k && k <= 0xFFFD) {
+            specials[k-0xFFFD] = v;
         }
     }
     let puaIndexStr = privateUseArea.length<1 ? '' : `
+
 // Index to Unicode Private Use Area block glyph patterns (UI sprites)
 const PRIVATE_USE_AREA: [u16; ${privateUseArea.length}] = [
     ${privateUseArea.map(v => v.start + ", // " + v.name).join("\n    ")}
-];
-`;
+];`;
     let puaMatchStr = privateUseArea.length<1 ? '' : `
         0xE700..=0xE70C => PRIVATE_USE_AREA[(c as usize) - 0xE700] as usize,`;
     let indexStr = `
@@ -157,8 +163,9 @@ pub fn get_glyph_pattern_offset(c: char) -> usize {
         0x20..=0x7E => BASIC_LATIN[(c as usize) - 0x20] as usize,
         0xA0..=0xFF => LATIN_1[(c as usize) - 0xA0] as usize,
         0x152..=0x153 => LATIN_EXTENDED_A[(c as usize) - 0x152] as usize,
+        0x2018..=0x2022 => GENERAL_PUNCTUATION[(c as usize) - 0x2018] as usize,
         0x20AC..=0x20AC => CURRENCY_SYMBOLS[(c as usize) - 0x20AC] as usize,${puaMatchStr}
-        _ => BASIC_LATIN[('?' as usize) - 0x20] as usize,
+        _ => SPECIALS[(0xFFFD as usize) - 0xFFFD] as usize,
     }
 }
 
@@ -177,12 +184,20 @@ const LATIN_EXTENDED_A: [u16; ${latinExtendedA.length}] = [
     ${latinExtendedA.map(v => v.start + ", // '" + v.chr + "'").join("\n    ")}
 ];
 
+// Index to General Punctuation block glyph patterns
+const GENERAL_PUNCTUATION: [u16; ${generalPunctuation.length}] = [
+    ${generalPunctuation.map(v => v.start + ", // '" + v.chr + "'").join("\n    ")}
+];
+
 // Index to Unicode Currency Symbols block glyph patterns
 const CURRENCY_SYMBOLS: [u16; ${currencySymbols.length}] = [
     ${currencySymbols.map(v => v.start + ", // '" + v.chr +"'").join("\n    ")}
-];
+];${puaIndexStr}
 
-${puaIndexStr.trim()}
+// Index to Unicode Specials block glyph patterns
+const SPECIALS: [u16; ${specials.length}] = [
+    ${specials.map(v => v.start + ", // '" + v.chr + "'").join("\n    ")}
+];
 `;
     return indexStr.trim();
 }
@@ -469,7 +484,7 @@ var charMap = {
     161: {row: 1, col:12, hex: 'A1', chr: '¡'},
     162: {row: 2, col:10, hex: 'A2', chr: '¢'},
     163: {row: 3, col:10, hex: 'A3', chr: '£'},
-    164: {row: 5, col:13, hex: 'A4', chr: '¤'},
+    164: {row:15, col: 1, hex: 'A4', chr: '¤'},
     165: {row: 4, col:11, hex: 'A5', chr: '¥'},
     166: {row:15, col: 7, hex: 'A6', chr: '¦'},
     167: {row: 4, col:10, hex: 'A7', chr: '§'},
@@ -562,8 +577,24 @@ var charMap = {
     254: {row:14, col: 1, hex: 'FE', chr: 'þ'},
     255: {row: 8, col:13, hex: 'FF', chr: 'ÿ'},
 
+    // Unicode Latin Extended A block
     338: {row:14, col:12, hex: '152', chr: 'Œ'},
     339: {row:15, col:12, hex: '153', chr: 'œ'},
+
+    // Unicode General Punctuation block
+    8216: {row:4, col:13, hex: '2018', chr: '‘'}, // Left Single Quotation Mark
+    8217: {row:5, col:13, hex: '2019', chr: '’'}, // Right Single Quotation Mark
+    8218: {row:2, col:14, hex: '201A', chr: '‚'}, // Single Low-9 Quotation Mark
+    8219: {row:7, col:11, hex: '201B', chr: '‛'}, // Single High-Reversed-9 Quotation Mark
+    8220: {row:2, col:13, hex: '201C', chr: '“'}, // Left Double Quotation Mark
+    8221: {row:3, col:13, hex: '201D', chr: '”'}, // Right Double Quotation Mark
+    8222: {row:3, col:14, hex: '201E', chr: '„'}, // Double Low-9 Quotation Mark
+    8223: {row:8, col:11, hex: '201F', chr: '‟'}, // Double High-Reversed-9 Quotation Mark
+    8224: {row:0, col:10, hex: '2020', chr: '†'}, // Dagger
+    8225: {row:0, col:14, hex: '2021', chr: '‡'}, // Double Dagger
+    8226: {row:5, col:10, hex: '2022', chr: '•'}, // Bullet
+
+    // Unicode Currency Symbols block
     8364: {row:11, col:13, hex: '20AC', chr: '€'},
 
     // Unicode Private Use Area assignments for UI sprites
@@ -580,4 +611,7 @@ var charMap = {
     59146: {row:13, col:0, hex: 'E70A', name: 'Shift_Arrow'},
     59147: {row:14, col:0, hex: 'E70B', name: 'Backspace_Symbol'},
     59148: {row:15, col:0, hex: 'E70C', name: 'Enter_Symbol'},
+
+    // Unicode Specials Block
+    65533: {row:0, col:15, hex: 'FFFD', chr: '�'},
 };

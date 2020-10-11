@@ -7,9 +7,10 @@ pub fn get_glyph_pattern_offset(c: char) -> usize {
         0x20..=0x7E => BASIC_LATIN[(c as usize) - 0x20] as usize,
         0xA0..=0xFF => LATIN_1[(c as usize) - 0xA0] as usize,
         0x152..=0x153 => LATIN_EXTENDED_A[(c as usize) - 0x152] as usize,
+        0x2018..=0x2022 => GENERAL_PUNCTUATION[(c as usize) - 0x2018] as usize,
         0x20AC..=0x20AC => CURRENCY_SYMBOLS[(c as usize) - 0x20AC] as usize,
         0xE700..=0xE70C => PRIVATE_USE_AREA[(c as usize) - 0xE700] as usize,
-        _ => BASIC_LATIN[('?' as usize) - 0x20] as usize,
+        _ => SPECIALS[(0xFFFD as usize) - 0xFFFD] as usize,
     }
 }
 
@@ -218,26 +219,46 @@ const LATIN_EXTENDED_A: [u16; 2] = [
     1433, // 'œ'
 ];
 
+// Index to General Punctuation block glyph patterns
+const GENERAL_PUNCTUATION: [u16; 11] = [
+    1443, // '‘'
+    1445, // '’'
+    1447, // '‚'
+    1449, // '‛'
+    1451, // '“'
+    1455, // '”'
+    1459, // '„'
+    1463, // '‟'
+    1467, // '†'
+    1470, // '‡'
+    1474, // '•'
+];
+
 // Index to Unicode Currency Symbols block glyph patterns
 const CURRENCY_SYMBOLS: [u16; 1] = [
-    1443, // '€'
+    1479, // '€'
 ];
 
 // Index to Unicode Private Use Area block glyph patterns (UI sprites)
 const PRIVATE_USE_AREA: [u16; 13] = [
-    1452, // Battery_05
-    1462, // Battery_25
-    1472, // Battery_50
-    1482, // Battery_75
-    1492, // Battery_99
-    1502, // Radio_3
-    1515, // Radio_2
-    1528, // Radio_1
-    1541, // Radio_0
-    1554, // Radio_Off
-    1567, // Shift_Arrow
-    1575, // Backspace_Symbol
-    1591, // Enter_Symbol
+    1488, // Battery_05
+    1498, // Battery_25
+    1508, // Battery_50
+    1518, // Battery_75
+    1528, // Battery_99
+    1538, // Radio_3
+    1551, // Radio_2
+    1564, // Radio_1
+    1577, // Radio_0
+    1590, // Radio_Off
+    1603, // Shift_Arrow
+    1611, // Backspace_Symbol
+    1627, // Enter_Symbol
+];
+
+// Index to Unicode Specials block glyph patterns
+const SPECIALS: [u16; 1] = [
+    1639, // '�'
 ];
 
 /// Maximum height of glyph patterns in this bitmap typeface.
@@ -254,7 +275,7 @@ pub const MAX_HEIGHT: u8 = 30;
 ///  h: Height of pattern in pixels
 ///  yOffset: Vertical offset (pixels downward from top of line) to position
 ///     glyph pattern properly relative to text baseline
-pub const DATA: [u32; 1603] = [
+pub const DATA: [u32; 1652] = [
     // [0]: 20 ' '
     0x0004020e, 0x00000000,
     // [2]: 21 '!'
@@ -715,45 +736,70 @@ pub const DATA: [u32; 1603] = [
     // [1433]: 153 'œ'
     0x00140e0a, 0x3fffc3ff, 0xfcf0f0ff, 0x0f0ff0f0, 0xff0f0ff0, 0xffff0fff, 0xf0f00f0f, 0x00f0f03f,
     0x0f033fff, 0xc3fffc00,
-    // [1443]: 20AC '€'
+    // [1443]: 2018 '‘'
+    0x00040806, 0x33ccffff,
+    // [1445]: 2019 '’'
+    0x00040806, 0xffff33cc,
+    // [1447]: 201A '‚'
+    0x00040814, 0xffff33cc,
+    // [1449]: 201B '‛'
+    0x00040806, 0xffffcc33,
+    // [1451]: 201C '“'
+    0x000a0806, 0x30cc3c33, 0x0cf3fcff, 0x3fcf0000,
+    // [1455]: 201D '”'
+    0x000a0806, 0xf3fcff3f, 0xcf30cc3c, 0x330c0000,
+    // [1459]: 201E '„'
+    0x000a0814, 0xf3fcff3f, 0xcf30cc3c, 0x330c0000,
+    // [1463]: 201F '‟'
+    0x000a0806, 0xf3fcff3f, 0xcfc330c3, 0x0cc30000,
+    // [1467]: 2020 '†'
+    0x00060a06, 0x30cfff30, 0xc30c30c0,
+    // [1470]: 2021 '‡'
+    0x00060c06, 0x30cfff30, 0xc30cfff3, 0x0c000000,
+    // [1474]: 2022 '•'
+    0x000a0a0a, 0x3f0fcfff, 0xffffffff, 0xffff3f0f, 0xc0000000,
+    // [1479]: 20AC '€'
     0x00101008, 0x03fc03fc, 0x0c030c03, 0x30003000, 0xfffcfffc, 0x30003000, 0xfff0fff0, 0x0c030c03,
     0x03fc03fc,
-    // [1452]: E700 Battery_05
+    // [1488]: E700 Battery_05
     0x00180c0c, 0x7ffffc80, 0x0002b000, 0x02b00003, 0xb00003b0, 0x0003b000, 0x03b00003, 0xb00003b0,
     0x00028000, 0x027ffffc,
-    // [1462]: E701 Battery_25
+    // [1498]: E701 Battery_25
     0x00180c0c, 0x7ffffc80, 0x0002be00, 0x02be0003, 0xbe0003be, 0x0003be00, 0x03be0003, 0xbe0003be,
     0x00028000, 0x027ffffc,
-    // [1472]: E702 Battery_50
+    // [1508]: E702 Battery_50
     0x00180c0c, 0x7ffffc80, 0x0002bff0, 0x02bff003, 0xbff003bf, 0xf003bff0, 0x03bff003, 0xbff003bf,
     0xf0028000, 0x027ffffc,
-    // [1482]: E703 Battery_75
+    // [1518]: E703 Battery_75
     0x00180c0c, 0x7ffffc80, 0x0002bfff, 0x82bfff83, 0xbfff83bf, 0xff83bfff, 0x83bfff83, 0xbfff83bf,
     0xff828000, 0x027ffffc,
-    // [1492]: E704 Battery_99
+    // [1528]: E704 Battery_99
     0x00180c0c, 0x7ffffc80, 0x0002bfff, 0xfabffffb, 0xbffffbbf, 0xfffbbfff, 0xfbbffffb, 0xbffffbbf,
     0xfffa8000, 0x027ffffc,
-    // [1502]: E705 Radio_3
+    // [1538]: E705 Radio_3
     0x00151107, 0x00f8001f, 0xf003e3e0, 0x3c078380, 0x0e387c3b, 0x8ff8e8f1, 0xe20e0380, 0xe10e023e,
     0x2003f800, 0x38e00082, 0x00008000, 0x0e000020, 0x00000000,
-    // [1515]: E706 Radio_2
+    // [1551]: E706 Radio_2
     0x00151107, 0x00000000, 0x00000000, 0x00000000, 0x00007c00, 0x0ff800f1, 0xe00e0380, 0xe10e023e,
     0x2003f800, 0x38e00082, 0x00008000, 0x0e000020, 0x00000000,
-    // [1528]: E707 Radio_1
+    // [1564]: E707 Radio_1
     0x00151107, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x0100003e,
     0x0003f800, 0x38e00082, 0x00008000, 0x0e000020, 0x00000000,
-    // [1541]: E708 Radio_0
+    // [1577]: E708 Radio_0
     0x00151107, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
     0x00000000, 0x00000000, 0x00008000, 0x0e000020, 0x00000000,
-    // [1554]: E709 Radio_Off
+    // [1590]: E709 Radio_Off
     0x00151107, 0x00f80018, 0x30030060, 0x20008200, 0x0220000a, 0x00002800, 0x02200020, 0x80020200,
     0x20080200, 0x20200082, 0x00022000, 0x0a000020, 0x00000000,
-    // [1567]: E70A Shift_Arrow
+    // [1603]: E70A Shift_Arrow
     0x000a1406, 0x0c0783f1, 0xfefffff0, 0xc0300c03, 0x00c0300c, 0x0300c030, 0x0c0300c0, 0x30000000,
-    // [1575]: E70B Backspace_Symbol
+    // [1611]: E70B Backspace_Symbol
     0x001a1206, 0x00ffffc0, 0x7ffff038, 0x000c1c00, 0x030e1818, 0xc7070e33, 0x80e70dc0, 0x1f83e003,
     0xc0f800f0, 0x37007e0c, 0xe039c31c, 0x1c38c386, 0x06307000, 0x0c0e0003, 0x01ffffc0, 0x3ffff000,
-    // [1591]: E70C Enter_Symbol
+    // [1627]: E70C Enter_Symbol
     0x00180e08, 0x00000300, 0x00030000, 0x03000003, 0x0c00031c, 0x00033c00, 0x037c0003, 0xffffffff,
     0xffff7c00, 0x003c0000, 0x1c00000c, 0x00000000,
+    // [1639]: FFFD '�'
+    0x00121404, 0x00c00030, 0x003f000f, 0xc00f3c03, 0xcf03ccf0, 0xf33cffcf, 0xfff3fff3, 0xfffcff3f,
+    0xff0fffc0, 0xf3c03cf0, 0x03f000fc, 0x000c0003, 0x00000000,
 ];

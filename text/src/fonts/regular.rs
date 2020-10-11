@@ -7,8 +7,9 @@ pub fn get_glyph_pattern_offset(c: char) -> usize {
         0x20..=0x7E => BASIC_LATIN[(c as usize) - 0x20] as usize,
         0xA0..=0xFF => LATIN_1[(c as usize) - 0xA0] as usize,
         0x152..=0x153 => LATIN_EXTENDED_A[(c as usize) - 0x152] as usize,
+        0x2018..=0x2022 => GENERAL_PUNCTUATION[(c as usize) - 0x2018] as usize,
         0x20AC..=0x20AC => CURRENCY_SYMBOLS[(c as usize) - 0x20AC] as usize,
-        _ => BASIC_LATIN[('?' as usize) - 0x20] as usize,
+        _ => SPECIALS[(0xFFFD as usize) - 0xFFFD] as usize,
     }
 }
 
@@ -217,9 +218,29 @@ const LATIN_EXTENDED_A: [u16; 2] = [
     1340, // 'œ'
 ];
 
+// Index to General Punctuation block glyph patterns
+const GENERAL_PUNCTUATION: [u16; 11] = [
+    1349, // '‘'
+    1351, // '’'
+    1353, // '‚'
+    1355, // '‛'
+    1357, // '“'
+    1360, // '”'
+    1363, // '„'
+    1366, // '‟'
+    1369, // '†'
+    1376, // '‡'
+    1384, // '•'
+];
+
 // Index to Unicode Currency Symbols block glyph patterns
 const CURRENCY_SYMBOLS: [u16; 1] = [
-    1349, // '€'
+    1390, // '€'
+];
+
+// Index to Unicode Specials block glyph patterns
+const SPECIALS: [u16; 1] = [
+    1399, // '�'
 ];
 
 /// Maximum height of glyph patterns in this bitmap typeface.
@@ -236,7 +257,7 @@ pub const MAX_HEIGHT: u8 = 30;
 ///  h: Height of pattern in pixels
 ///  yOffset: Vertical offset (pixels downward from top of line) to position
 ///     glyph pattern properly relative to text baseline
-pub const DATA: [u32; 1358] = [
+pub const DATA: [u32; 1412] = [
     // [0]: 20 ' '
     0x0004020e, 0x00000000,
     // [2]: 21 '!'
@@ -674,7 +695,32 @@ pub const DATA: [u32; 1358] = [
     // [1340]: 153 'œ'
     0x00120e0a, 0x3f3f0fcf, 0xcc0c0f03, 0x03c0c0f0, 0x303c0fff, 0x03ffc0c0, 0x30300c0c, 0x0f03033f,
     0x3f0fcfc0,
-    // [1349]: 20AC '€'
+    // [1349]: 2018 '‘'
+    0x00040604, 0x33cccc00,
+    // [1351]: 2019 '’'
+    0x00040604, 0x3333cc00,
+    // [1353]: 201A '‚'
+    0x00040616, 0x3333cc00,
+    // [1355]: 201B '‛'
+    0x00040604, 0xcccc3300,
+    // [1357]: 201C '“'
+    0x000a0604, 0x30cc3c33, 0x0cc330c0,
+    // [1360]: 201D '”'
+    0x000a0604, 0x30cc330c, 0xc3c330c0,
+    // [1363]: 201E '„'
+    0x000a0616, 0x30cc330c, 0xc3c330c0,
+    // [1366]: 201F '‟'
+    0x000a0604, 0xc330cc33, 0x0c30cc30,
+    // [1369]: 2020 '†'
+    0x000a1206, 0x0c0300c0, 0x30fffff0, 0xc0300c03, 0x00c0300c, 0x0300c030, 0x0c030000,
+    // [1376]: 2021 '‡'
+    0x000a1606, 0x0c0300c0, 0x30fffff0, 0xc0300c03, 0x00c0300c, 0x0300c030, 0xfffff0c0, 0x300c0300,
+    // [1384]: 2022 '•'
+    0x000c0c0a, 0x3fc3fcff, 0xffffffff, 0xffffffff, 0xffffff3f, 0xc3fc0000,
+    // [1390]: 20AC '€'
     0x00101008, 0x03fc03fc, 0x0c030c03, 0x30003000, 0xfff0fff0, 0x30003000, 0xfff0fff0, 0x0c030c03,
     0x03fc03fc,
+    // [1399]: FFFD '�'
+    0x00121404, 0x00c00030, 0x003f000f, 0xc00f3c03, 0xcf03ccf0, 0xf33cffcf, 0xfff3fff3, 0xfffcff3f,
+    0xff0fffc0, 0xf3c03cf0, 0x03f000fc, 0x000c0003, 0x00000000,
 ];
