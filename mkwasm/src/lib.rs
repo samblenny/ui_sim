@@ -33,7 +33,6 @@ pub extern "C" fn init() {
     let time = "12:00";
     let note = "Hello, world!";
     unsafe {
-        gui_rom::stripes(&mut LCD_FRAME_BUF);
         gui_rom::home_screen(&mut LCD_FRAME_BUF, &title, &wifi, &battery, &time, &note);
     }
     lcd_set_dirty();

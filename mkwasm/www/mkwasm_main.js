@@ -83,9 +83,9 @@ function repaintLCD() {
                     // Pixel == 0 means black
                     // To let the white (clear) pixels take the color of the canvas element's
                     // background, modulate the alpha channel.
-                    imageData.data[pxOffset] = 0;
-                    imageData.data[pxOffset+1] = 0;
-                    imageData.data[pxOffset+2] = 0;
+                    imageData.data[pxOffset] = 0x33;
+                    imageData.data[pxOffset+1] = 0x33;
+                    imageData.data[pxOffset+2] = 0x33;
                     imageData.data[pxOffset+3] = (fbPixel==1) ? 0 : 0xff;
                 }
             }

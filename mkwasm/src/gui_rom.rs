@@ -10,8 +10,8 @@ pub const STATUS_Y0: usize = 0;
 pub const STATUS_Y1: usize = STATUS_Y0 + STATUS_H;
 
 /// Keyboard height and Y bounds
-pub const KBD_KEY_H: usize = (blit::fonts::bold::MAX_HEIGHT + 1) as usize;
-pub const KBD_H: usize = KBD_KEY_H * 6;
+pub const KBD_KEY_H: usize = 33;
+pub const KBD_H: usize = (KBD_KEY_H * 6) + 1;
 pub const KBD_Y0: usize = SCREEN_Y - KBD_H;
 pub const KBD_Y1: usize = SCREEN_Y;
 
@@ -41,10 +41,52 @@ pub fn home_screen(
     let y = (MAIN_H >> 1) + MAIN_Y0;
     blit::string(&mut fb, x, y, note, blit::TStyle::RegularCenter);
     // Keyboard
-    blit::blank_keyboard(&mut fb, KBD_Y0, KBD_Y1);
+    blank_keyboard(&mut fb, KBD_Y0, KBD_Y1);
+}
+
+/// Fill a full width screen region bounded by y0..y1 with a blank keyboard
+fn blank_keyboard(fb: &mut blit::LcdFB, y0: usize, y1: usize) {
+    if y1 - y0 != KBD_H || y1 > blit::LCD_LINES {
+        return;
+    }
+    // Blit patterns for the three different styles of key rows
+    let fkey_row = [
+        0xe0000000, 0x00000000, 0x08000000, 0x00000000, 0x03ffffff, 0xffffffff, 0xffc00000,
+        0x00000000, 0x00100000, 0x00000000, 0x0007ffff,
+    ];
+    let alphanumeric_row = [
+        0xe0000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01800000, 0x00400000,
+        0x00200000, 0x00100000, 0x00080000, 0x0007ffff,
+    ];
+    let spacebar_row = [
+        0xffffffff, 0xf0000000, 0x08000000, 0x04000000, 0x00000000, 0x00000000, 0x00000000,
+        0x00200000, 0x00100000, 0x000fffff, 0xffffffff,
+    ];
+    // Blit 1 row of F-keys
+    let mut y = y0;
+    blit::line_fill_clear(fb, y);
+    for i in 1..KBD_KEY_H {
+        blit::line_fill_pattern(fb, y + i, &fkey_row);
+    }
+    // Blit 4 rows of alphanumeric keys
+    for _ in 0..4 {
+        y += KBD_KEY_H;
+        blit::line_fill_clear(fb, y);
+        for i in 1..KBD_KEY_H {
+            blit::line_fill_pattern(fb, y + i, &alphanumeric_row);
+        }
+    }
+    // Blit the spacebar row
+    y += KBD_KEY_H;
+    blit::line_fill_clear(fb, y);
+    for i in 1..KBD_KEY_H {
+        blit::line_fill_pattern(fb, y + i, &spacebar_row);
+    }
+    blit::line_fill_clear(fb, y + KBD_KEY_H);
 }
 
 /// Draw test patern of stripes
+#[allow(dead_code)]
 pub fn stripes(fb: &mut blit::LcdFB) {
     let mut i = 0;
     let mut pattern: u32 = 0xffffff03;

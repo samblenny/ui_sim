@@ -11,6 +11,9 @@ pub const LCD_FRAME_BUF_SIZE: usize = LCD_WORDS_PER_LINE * LCD_LINES;
 /// Type for passing frame buffer references
 pub type LcdFB = [u32; LCD_FRAME_BUF_SIZE];
 
+/// Type for a blit pattern to fill one row
+pub type BlitRow = [u32; LCD_WORDS_PER_LINE];
+
 /// Text styles
 #[derive(Copy, Clone)]
 pub enum TStyle {
@@ -47,11 +50,8 @@ pub fn outline_region(fb: &mut LcdFB, y0: usize, y1: usize) {
     line_fill_clear(fb, y1 - 1);
 }
 
-/// Fill a full width screen region bounded by y0..y1 with a blank keyboard
-pub fn blank_keyboard(fb: &mut LcdFB, y0: usize, y1: usize) {}
-
 /// Clear a line of the screen
-fn line_fill_clear(fb: &mut LcdFB, y: usize) {
+pub fn line_fill_clear(fb: &mut LcdFB, y: usize) {
     if y >= LCD_LINES {
         return;
     }
@@ -60,6 +60,17 @@ fn line_fill_clear(fb: &mut LcdFB, y: usize) {
         fb[base + i] = 0xffff_ffff;
     }
     fb[base + 10] = 0xffff_0000;
+}
+
+/// Fill a line of the screen with full-width pattern
+pub fn line_fill_pattern(fb: &mut LcdFB, y: usize, pattern: &BlitRow) {
+    if y >= LCD_LINES {
+        return;
+    }
+    let base = y * LCD_WORDS_PER_LINE;
+    for (i, v) in pattern.iter().enumerate() {
+        fb[base + i] = *v;
+    }
 }
 
 /// Fill a line of the screen with black, padded with clear to left and right
