@@ -1,6 +1,7 @@
 #![no_std]
 extern crate kbd;
 extern crate trace;
+extern crate blit;
 
 /// For building wasm32 no_std, add panic handler and functions to let
 /// javascript check shared buffer pointers. This panic handler conflicts with
@@ -8,12 +9,10 @@ extern crate trace;
 #[cfg(target_arch = "wasm32")]
 pub mod no_std_bindings;
 
+mod gui_rom;
+
 /// Frame buffer for sharing LCD state between javascript and wasm
-const LCD_WORDS_PER_LINE: usize = 11;
-const LCD_PX_PER_LINE: usize = 336;
-const LCD_LINES: usize = 536;
-const LCD_FRAME_BUF_SIZE: usize = LCD_WORDS_PER_LINE * LCD_LINES;
-pub static mut LCD_FRAME_BUF: [u32; LCD_FRAME_BUF_SIZE] = [0; LCD_FRAME_BUF_SIZE];
+pub static mut LCD_FRAME_BUF: blit::LcdFB = [0; blit::LCD_FRAME_BUF_SIZE];
 pub static mut LCD_DIRTY: u32 = 0;
 
 /// Character and string buffers for a minimalist FIFO string editor
@@ -28,21 +27,14 @@ static mut UTF8_BUF_END: usize = 0;
 /// Initialize the hardware (splash screen, etc.)
 #[no_mangle]
 pub extern "C" fn init() {
-    // Draw stripes
-    let mut i = 0;
-    let mut pattern: u32 = 0xffffff03;
-    for _line in 0..LCD_LINES {
-        for _word in 0..LCD_WORDS_PER_LINE - 1 {
-            unsafe {
-                LCD_FRAME_BUF[i] = pattern;
-            }
-            i += 1;
-        }
-        unsafe {
-            LCD_FRAME_BUF[i] = pattern & 0xffff0000;
-        }
-        i += 1;
-        pattern = pattern.rotate_right(1);
+    let title = "home";
+    let wifi = "";
+    let battery = "";
+    let time = "12:00";
+    let note = "Hello, world!";
+    unsafe {
+        gui_rom::stripes(&mut LCD_FRAME_BUF);
+        gui_rom::home_screen(&mut LCD_FRAME_BUF, &title, &wifi, &battery, &time, &note);
     }
     lcd_set_dirty();
 }
