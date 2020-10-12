@@ -21,23 +21,10 @@ header button, header select{
 header button{margin:0 13px;padding:4px 8px;}
 header button:active{background:#ddd;}
 header label{margin:0 4px;}
-#screen{
-    width:336px;height:536px;border-radius:3px;stroke:none;fill:#333;background:#aabac9;
-    stroke-width:1px;stroke-linecap:square;shape-rendering:crispEdges;vector-effect:non-scaling-stroke;}
-#screen text{stroke:none;font-size:16px;font-family:sans-serif;}
-svg text.tc{text-anchor:middle;user-select:none;-webkit-user-select: none;}
-svg text.tl{text-anchor:left;user-select:none;-webkit-user-select: none;}
-#screen .s0{stroke:none;}
-#screen .s1{stroke:#333;}
-#screen .s2{stroke:#aabac9;}
-#screen .f0{fill:none;}
-#screen .f1{fill:#333;}
-#screen .f2{fill:#aabac9;}
-#screen.backlit .s2{stroke:#96e00e;}
-#screen.backlit .f2{fill:#96e00e;}
+#screen{width:336px;height:536px;background:#aabac9;}
 #screen.backlit{background:#96e00e;}
-#screen path{fill:none;stroke-linejoin:miter;stroke-linecap:square;}
-
+#keyboard text.tc{text-anchor:middle;user-select:none;-webkit-user-select: none;}
+#keyboard text.tl{text-anchor:left;user-select:none;-webkit-user-select: none;}
 #keyboard{-webkit-touch-callout:none;-webkit-user-select:none;/*prevent unintended selecting in iOS*/}
 #keyboard rect{stroke-width:2px;stroke-linecap:square;stroke:#1a1a1a;fill:#1a1a1a;}
 #keyboard rect{-webkit-tap-highlight-color: transparent;/*turn off default gray tap overlay*/}

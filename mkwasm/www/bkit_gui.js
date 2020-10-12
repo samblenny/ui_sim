@@ -1,1 +1,0 @@
-../../www/bkit_gui.js

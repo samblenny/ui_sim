@@ -8,14 +8,71 @@ extern crate trace;
 #[cfg(target_arch = "wasm32")]
 pub mod no_std_bindings;
 
-/// Buffers for IPC with javascript using pointer into wasm shared memory
+/// Frame buffer for sharing LCD state between javascript and wasm
+const LCD_WORDS_PER_LINE: usize = 11;
+const LCD_PX_PER_LINE: usize = 336;
+const LCD_LINES: usize = 536;
+const LCD_FRAME_BUF_SIZE: usize = LCD_WORDS_PER_LINE * LCD_LINES;
+pub static mut LCD_FRAME_BUF: [u32; LCD_FRAME_BUF_SIZE] = [0; LCD_FRAME_BUF_SIZE];
+pub static mut LCD_DIRTY: u32 = 0;
+
+/// Character and string buffers for a minimalist FIFO string editor
 const MAX_CHARS: usize = 20;
 const CHAR_BUF_SIZE: usize = MAX_CHARS;
-const UTF8_BUF_SIZE: usize = MAX_CHARS * 4;
 static mut CHAR_BUF: [char; CHAR_BUF_SIZE] = ['\0'; CHAR_BUF_SIZE];
 static mut CHAR_BUF_END: usize = 0;
-pub static mut UTF8_BUF: [u8; UTF8_BUF_SIZE] = [0; UTF8_BUF_SIZE];
-pub static mut UTF8_BUF_END: usize = 0;
+const UTF8_BUF_SIZE: usize = MAX_CHARS * 4;
+static mut UTF8_BUF: [u8; UTF8_BUF_SIZE] = [0; UTF8_BUF_SIZE];
+static mut UTF8_BUF_END: usize = 0;
+
+/// Initialize the hardware (splash screen, etc.)
+#[no_mangle]
+pub extern "C" fn init() {
+    // Draw stripes
+    let mut i = 0;
+    let mut pattern: u32 = 0xffffff03;
+    for _line in 0..LCD_LINES {
+        for _word in 0..LCD_WORDS_PER_LINE - 1 {
+            unsafe {
+                LCD_FRAME_BUF[i] = pattern;
+            }
+            i += 1;
+        }
+        unsafe {
+            LCD_FRAME_BUF[i] = pattern & 0xffff0000;
+        }
+        i += 1;
+        pattern = pattern.rotate_right(1);
+    }
+    lcd_set_dirty();
+}
+
+/// Check if lcd frame buffer is dirty: 0=clean, 1=dirty
+#[no_mangle]
+pub extern "C" fn lcd_dirty() -> i32 {
+    unsafe {
+        if LCD_DIRTY > 0 {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+/// Mark lcd frame buffer as clean
+#[no_mangle]
+pub extern "C" fn lcd_clear_dirty() {
+    unsafe {
+        LCD_DIRTY = 0;
+    }
+}
+
+/// Mark lcd frame buffer as dirty
+fn lcd_set_dirty() {
+    unsafe {
+        LCD_DIRTY = 1;
+    }
+}
 
 /// Respond to key press event
 #[no_mangle]

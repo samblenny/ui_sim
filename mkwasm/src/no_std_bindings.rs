@@ -16,12 +16,20 @@ pub fn panic(_panic_info: &PanicInfo) -> ! {
     }
 }
 
-/// Export pointer and size of shared buffer for javascript
+/// Export pointer and size of shared frame buffer for javascript
 #[no_mangle]
-pub unsafe extern "C" fn utf8_buf_ptr() -> *const u8 {
-    super::UTF8_BUF.as_ptr()
+pub unsafe extern "C" fn lcd_words_per_line() -> i32 {
+    super::LCD_WORDS_PER_LINE as i32
 }
 #[no_mangle]
-pub unsafe extern "C" fn utf8_buf_end() -> i32 {
-    super::UTF8_BUF_END as i32
+pub unsafe extern "C" fn lcd_px_per_line() -> i32 {
+    super::LCD_PX_PER_LINE as i32
+}
+#[no_mangle]
+pub unsafe extern "C" fn lcd_lines() -> i32 {
+    super::LCD_LINES as i32
+}
+#[no_mangle]
+pub unsafe extern "C" fn lcd_frame_buf_ptr() -> *const u32 {
+    super::LCD_FRAME_BUF.as_ptr()
 }

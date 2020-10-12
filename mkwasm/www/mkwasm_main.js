@@ -1,14 +1,12 @@
 "use strict";
 import * as wasm from './mkwasm_wasm.js';
-import * as bkit_gui from './bkit_gui.js';
-import * as rom from './bkit_gui_rom.js';
 import * as kbd from './bkit_kbd.js';
 
 const backlightBtn = document.querySelector('#backlightBtn');
 const kbdSelect = document.querySelector('#kbdSelect');
 const keyboard = document.querySelector('#keyboard');
 const screen = document.querySelector('#screen');
-var cachedRomPages = {};
+const screenCtx = screen.getContext('2d');
 
 // Load wasm module with callback to continue initialization
 let loadSuccessCallback = initialize;
@@ -16,8 +14,6 @@ wasm.loadModule(loadSuccessCallback);
 
 // Load data and add event listeners
 function initialize() {
-    loadRomToCache();
-
     // Configure backlight button
     backlightBtn.addEventListener('click', e => {
         let c = "backlit";
@@ -54,25 +50,48 @@ function initialize() {
         kbdSelect.blur();
     });
 
-    // Hard Reset:  doHardReset(),
-    // Soft Reboot: doRepaintWithEventCode(""),
-    // Wifi 0:      doRepaintWithEventCode(": wWifi sprWifi0 ;"),
-    // Bat 99:      doRepaintWithEventCode(": wBat sprBat99 ;"),
-    // Qwerty:      doRepaintWithEventCode(": kbd kQwerty ;"),
-    // QwertyAlt:   doRepaintWithEventCode(": kbd kQwertyAlt ;"),
-    // Azerty:      doRepaintWithEventCode(": kbd kAzerty ;"),
-    // AzertyAltL:  doRepaintWithEventCode(": kbd kAzertyAltL ;"),
-    // AzertyAltR:  doRepaintWithEventCode(": kbd kAzertyAltR ;"),
-    // Note:        doRepaintWithEventCode(`: note (${text}) ;`);
-    doHardReset();
+    // Initialize LCD screen
+    screen.height = 536;
+    screen.width = 336;
+    wasm.init();
+    repaintLCD();
 }
 
+// Paint the frame buffer (wasm shared memory) to the screen (canvas element)
 function repaintLCD() {
-    // Escape \ to \\ and ) to \) for gui toolkit rom interpreter
-    let rawNote = wasm.utf8Buf();
-    let note = rawNote.split('\\').join('\\\\').split(')').join('\\)');
-    let kbd = KbdOverlay[wasm.keyMapIndex()];
-    doRepaintWithEventCode(`: note (${note}) ; : kbd ${kbd} ;`); 
+    if (!wasm.lcdDirty()) {
+        return;
+    }
+    wasm.lcdClearDirty();
+    let lcdData = wasm.lcdFrameBuf();
+    let imageData = screenCtx.getImageData(0, 0, screen.width, screen.height);
+    let pxOffset = 0;
+    for (let line=0; line<lcdData.lines; line++) {
+        for (let w=0; w<lcdData.wordsPerLine; w++) {
+            // Lines are padded to multiples of 4 bytes
+            if (w*32 < lcdData.pxPerLine) {
+                let index = (line * lcdData.wordsPerLine * 4) + w*4;
+                let b0 = lcdData.bytes[index];
+                let b1 = lcdData.bytes[index+1];
+                let b2 = lcdData.bytes[index+2];
+                let b3 = lcdData.bytes[index+3];
+                let word = ((b3 >>> 0) << 24) | (b2 << 16) | (b1 << 8) | b0;
+                for (let bit=0; bit<32; bit++) {
+                    let pxOffset = (line * lcdData.pxPerLine + w*32 + bit) * 4;
+                    let fbPixel = 1 & (word >> (31-bit))
+                    // Pixel == 1 means clear (takes color of backlit background)
+                    // Pixel == 0 means black
+                    // To let the white (clear) pixels take the color of the canvas element's
+                    // background, modulate the alpha channel.
+                    imageData.data[pxOffset] = 0;
+                    imageData.data[pxOffset+1] = 0;
+                    imageData.data[pxOffset+2] = 0;
+                    imageData.data[pxOffset+3] = (fbPixel==1) ? 0 : 0xff;
+                }
+            }
+        }
+    }
+    screenCtx.putImageData(imageData, 0, 0);
 }
 
 // Keyboard overlay index to rom function lookup table
@@ -86,40 +105,3 @@ const KbdOverlay = [
     'kQwertyS',
     'kQwertyAlt',
 ];
-
-// Load ROM pages and render with default slot values
-function doHardReset() {
-    loadRomToCache();
-    let allRomPages = ['Sprites', 'Widgets', 'KbdCommon', 'KbdQwerty',
-                    'KbdAzerty', 'Views', 'PaintFrame'];
-    let code = allRomPages.map(p => cachedRomPages[p]).join("\n");
-    // This might take a while, so schedule it for a repaint
-    window.requestAnimationFrame(() => bkit_gui.run(code, screen));
-}
-
-// Render frame with event code spliced between toolkit library pages (with
-// slot defaults) and paint frame page with code to render active view. Goal is
-// to let event code override default slot values before view renders.
-function doRepaintWithEventCode(eventCode) {
-    let libraryPages = ['Sprites', 'Widgets', 'KbdCommon', 'KbdQwerty',
-                        'KbdAzerty', 'Views'];
-    let libraryCode = libraryPages.map(p => cachedRomPages[p]).join("\n");
-    let slotOverrides = eventCode;
-    let paintFrameCode = cachedRomPages['PaintFrame'];
-    let code = [libraryCode, slotOverrides, paintFrameCode].join("\n");
-    // This might take a while, so schedule it for a repaint
-    window.requestAnimationFrame(() => bkit_gui.run(code, screen));
-}
-
-// Load a fresh copy of ROM into the cache
-function loadRomToCache() {
-    cachedRomPages = {
-        PaintFrame: rom.PaintFrame,
-        Views: rom.Views,
-        KbdAzerty: rom.KbdAzerty,
-        KbdQwerty: rom.KbdQwerty,
-        KbdCommon: rom.KbdCommon,
-        Widgets: rom.Widgets,
-        Sprites: rom.Sprites,
-    };
-}
