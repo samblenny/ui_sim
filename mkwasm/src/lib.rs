@@ -28,8 +28,8 @@ static mut UTF8_BUF_END: usize = 0;
 #[no_mangle]
 pub extern "C" fn init() {
     let title = "home";
-    let wifi = "";
-    let battery = "";
+    let wifi = blit::fonts::pua::RADIO_3;
+    let battery = blit::fonts::pua::BATTERY_75;
     let time = "12:00";
     let note = "Hello, world!";
     unsafe {
