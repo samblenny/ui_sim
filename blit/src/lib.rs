@@ -1,7 +1,7 @@
 #![no_std]
 
 pub mod fonts;
-use fonts::{bold, GlyphHeader};
+use fonts::{Font, GlyphHeader};
 
 /// LCD Frame buffer bounds
 pub const LCD_WORDS_PER_LINE: usize = 11;
@@ -25,12 +25,29 @@ pub struct XRegion(pub usize, pub usize);
 
 /// Blit string with: XOR, bold font, align xr left yr top
 pub fn string_bold_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
+    let f = Font::new(fonts::GlyphSet::Bold);
     for c in s.chars() {
-        xr.0 += char_bold_left(fb, xr, yr, c);
+        xr.0 += xor_char(fb, xr, yr, c, f);
     }
 }
 
-/// Blit a char with: XOR, bold font, align left:xr.0 top:yr.0, pad L:1px R:2px
+/// Blit string with: XOR, regular font, align xr left yr top
+pub fn string_regular_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
+    let f = Font::new(fonts::GlyphSet::Regular);
+    for c in s.chars() {
+        xr.0 += xor_char(fb, xr, yr, c, f);
+    }
+}
+
+/// Blit string with: XOR, small font, align xr left yr top
+pub fn string_small_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
+    let f = Font::new(fonts::GlyphSet::Small);
+    for c in s.chars() {
+        xr.0 += xor_char(fb, xr, yr, c, f);
+    }
+}
+
+/// Blit a char with: XOR, align left:xr.0 top:yr.0, pad L:1px R:2px
 /// Precondition: glyph pattern width must be 32px or less
 /// Return: width in pixels of character + padding that were blitted (0 for error)
 ///
@@ -54,17 +71,13 @@ pub fn string_bold_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
 /// 1. Fits in word: xr:1..7   => (data[0].bit_30)->(data[0].bit_26), mask:0x7c00_0000
 /// 2. Spans words:  xr:30..36 => (data[0].bit_01)->(data[1].bit_29), mask:[0x0000_0003,0xe000_000]
 ///
-pub fn char_bold_left(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char) -> usize {
-    if yr.1 > LCD_LINES
-        || yr.0 + bold::MAX_HEIGHT as usize > yr.1
-        || xr.1 > LCD_PX_PER_LINE
-        || xr.0 >= xr.1
-    {
+pub fn xor_char(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char, f: Font) -> usize {
+    if yr.1 > LCD_LINES || xr.1 > LCD_PX_PER_LINE || xr.0 >= xr.1 {
         return 0;
     }
     // Look up glyph and unpack its header
-    let gpo = bold::get_glyph_pattern_offset(c);
-    let gh = GlyphHeader::new(bold::DATA[gpo]);
+    let gpo = (f.glyph_pattern_offset)(c);
+    let gh = GlyphHeader::new((f.glyph_data)(gpo));
     if gh.w > 32 {
         return 0;
     }
@@ -75,15 +88,15 @@ pub fn char_bold_left(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char) -> usiz
     let dest_low_word = x0 >> 5;
     let dest_high_word = x1 >> 5;
     let px_in_dest_low_word = 32 - (x0 & 0x1f);
-    let px_in_dest_high_word = gh.w - px_in_dest_low_word;
     // Blit it
     let y0 = yr.0 + gh.y_offset;
-    for y in 0..gh.h {
+    let y_max = if (y0 + gh.h) <= yr.1 { gh.h } else { yr.1 - y0 };
+    for y in 0..y_max {
         // Unpack pixels for this glyph row
         let px_offset = y * gh.w;
         let low_word = gpo + 1 + (px_offset >> 5);
         let px_in_low_word = 32 - (px_offset & 0x1f);
-        let mut pattern = bold::DATA[low_word];
+        let mut pattern = (f.glyph_data)(low_word);
         if gh.w <= px_in_low_word {
             // Low word contains all pixels for this row
             pattern = pattern >> (px_in_low_word - gh.w);
@@ -92,13 +105,13 @@ pub fn char_bold_left(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char) -> usiz
             // Pixels for this row span two words
             pattern = pattern << (32 - px_in_low_word);
             let px_in_high_word = gh.w - px_in_low_word;
-            let pattern_h = bold::DATA[low_word + 1];
+            let pattern_h = (f.glyph_data)(low_word + 1);
             pattern |= (pattern_h >> (32 - px_in_high_word)) << (32 - gh.w);
         }
         // XOR glyph pixels onto destination buffer
         let base = (y0 + y) * LCD_WORDS_PER_LINE;
         fb[base + dest_low_word] ^= pattern >> (32 - px_in_dest_low_word);
-        if px_in_dest_high_word > 0 {
+        if px_in_dest_low_word < gh.w {
             fb[base + dest_high_word] ^= pattern << px_in_dest_low_word;
         }
     }

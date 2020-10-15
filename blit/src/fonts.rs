@@ -30,7 +30,56 @@ impl GlyphHeader {
     pub fn new(header: u32) -> GlyphHeader {
         let w = ((header << 8) >> 24) as usize;
         let h = ((header << 16) >> 24) as usize;
-        let y_offset = ((header << 24) >> 24) as usize;
+        let y_offset = (header & 0x000000ff) as usize;
         GlyphHeader { w, h, y_offset }
     }
+}
+
+/// Available typeface glyph sets
+pub enum GlyphSet {
+    Bold,
+    Regular,
+    Small,
+}
+
+/// Abstraction for working with typeface glyph sets
+#[derive(Copy, Clone)]
+pub struct Font {
+    pub glyph_pattern_offset: GlyphPatternOffsetFnPtr,
+    pub glyph_data: GlyphDataFnPtr,
+}
+pub type GlyphPatternOffsetFnPtr = fn(char) -> usize;
+pub type GlyphDataFnPtr = fn(usize) -> u32;
+impl Font {
+    pub fn new(gs: GlyphSet) -> Font {
+        match gs {
+            GlyphSet::Bold => Font {
+                glyph_pattern_offset: bold::get_glyph_pattern_offset,
+                glyph_data: bold_data,
+            },
+            GlyphSet::Regular => Font {
+                glyph_pattern_offset: regular::get_glyph_pattern_offset,
+                glyph_data: regular_data,
+            },
+            GlyphSet::Small => Font {
+                glyph_pattern_offset: small::get_glyph_pattern_offset,
+                glyph_data: small_data,
+            },
+        }
+    }
+}
+
+/// Get word of packed glyph data for bold
+pub fn bold_data(index: usize) -> u32 {
+    bold::DATA[index]
+}
+
+/// Get word of packed glyph data for regular
+pub fn regular_data(index: usize) -> u32 {
+    regular::DATA[index]
+}
+
+/// Get word of packed glyph data for small
+pub fn small_data(index: usize) -> u32 {
+    small::DATA[index]
 }

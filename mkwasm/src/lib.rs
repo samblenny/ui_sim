@@ -30,7 +30,7 @@ pub extern "C" fn init() {
     let title = "home";
     let wifi = blit::fonts::pua::RADIO_3;
     let battery = blit::fonts::pua::BATTERY_75;
-    let time = "12:00";
+    let time = "12:34";
     let note = "Hello, world!";
     unsafe {
         gui_rom::home_screen(&mut LCD_FRAME_BUF, &title, &wifi, &battery, &time, &note);

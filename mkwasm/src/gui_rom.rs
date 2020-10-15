@@ -48,6 +48,10 @@ pub fn home_screen(
     xr.0 = 5;
     yr.0 += 5;
     blit::string_bold_left(&mut fb, xr, yr, note);
+    yr.0 += blit::fonts::bold::MAX_HEIGHT as usize;
+    blit::string_regular_left(&mut fb, xr, yr, note);
+    yr.0 += blit::fonts::regular::MAX_HEIGHT as usize;
+    blit::string_small_left(&mut fb, xr, yr, note);
     // Keyboard
     blank_keyboard(&mut fb, blit::YRegion(KBD_Y0, KBD_Y1));
 }
