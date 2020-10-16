@@ -53,6 +53,20 @@ fn lcd_set_dirty() {
     }
 }
 
+/// Respond to a cyle radio event (intended for UI demonstration)
+#[no_mangle]
+pub extern "C" fn cycle_radio() {
+    state::status::cycle_radio();
+    paint_home_screen();
+}
+
+/// Respond to a cyle radio event (intended for UI demonstration)
+#[no_mangle]
+pub extern "C" fn cycle_battery() {
+    state::status::cycle_battery();
+    paint_home_screen();
+}
+
 /// Respond to key press event
 #[no_mangle]
 pub extern "C" fn keydown(key_index: i32) {

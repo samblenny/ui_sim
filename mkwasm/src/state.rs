@@ -14,6 +14,32 @@ pub mod status {
     pub static mut TITLE: &str = &"home";
     pub static mut TIME: &str = &"12:34";
 
+    /// Change the battery level (intended for UI demonstration)
+    pub fn cycle_battery() {
+        unsafe {
+            BATTERY = match BATTERY {
+                Battery::B05 => Battery::B25,
+                Battery::B25 => Battery::B50,
+                Battery::B50 => Battery::B75,
+                Battery::B75 => Battery::B99,
+                Battery::B99 => Battery::B05,
+            };
+        }
+    }
+
+    /// Change the radio signal strength (intended for UI demonstration)
+    pub fn cycle_radio() {
+        unsafe {
+            RADIO = match RADIO {
+                Radio::R3 => Radio::ROff,
+                Radio::R2 => Radio::R3,
+                Radio::R1 => Radio::R2,
+                Radio::R0 => Radio::R1,
+                Radio::ROff => Radio::R0,
+            }
+        }
+    }
+
     /// Translate battery level to an icon char (Unicode Private Use Area)
     pub fn battery_icon() -> &'static str {
         unsafe {

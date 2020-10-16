@@ -4,17 +4,20 @@
 <link href="mkwasm.css" rel="stylesheet"></head><body>
 <header>
  <h1>mkwasm</h1>
+</header>
+
+<canvas id="screen"></canvas>
+
+<div id="controls">
+ <button id="cycleRadio">Radio</button>
+ <button id="cycleBattery">Battery</button>
  <button id="backlightBtn">Backlight</button>
  <label for="kbdSelect">kbd:</label>
  <select name="kbdSelect" id="kbdSelect">
   <option value="Azerty">Azerty</option>
   <option value="Qwerty">Qwerty</option>
  </select>
-</header>
-
-<canvas id="screen"></canvas>
-
-<div id="log"></div>
+</div>
 
 <svg id="keyboard" width="485" height="389" viewbox="0 0 485 389"
  version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg"></svg>

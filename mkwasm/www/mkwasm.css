@@ -5,22 +5,22 @@ body,div,pre,h1,p,button,select,textarea{font-size:inherit;color:inherit;}
 p{margin:0.3em 10px;}
 header{grid-area:H;color:#ddd;display:flex;align-items:baseline;}
 #screen{grid-area:S;background:#fff;overflow:auto;}
-#log{grid-area:E;display:block;padding:10px;border:none;border-radius:6px;}
+#controls{grid-area:C;display:block;padding:10px;border:none;}
 #keyboard{grid-area:K;background:#4b4b4b;width:485px;height:389px;border:none;border-radius:6px;}
 body{display:grid;
  grid:". . . . . . " 20px
       ". . S . H  ." 41px
-      ". . S . L  ." auto
+      ". . S . C  ." auto
       ". . S . K  ." auto
       ". . . . .  ." 1fr
       / minmax(10px,1fr) 72px 336px 72px 480px minmax(10px,1fr);}
 header h1{display:inline-block;font-size:1.5em;margin-left:2px;margin-right:auto;color:#ddd;}
-header button, header select{
+#controls button, #controls select{
     padding:4px;border-radius:6px;border:2px solid #999;
     font-size:15px;background:#ccc;color:black;}
-header button{margin:0 13px;padding:4px 8px;}
-header button:active{background:#ddd;}
-header label{margin:0 4px;}
+#controls button{margin:0 13px;padding:4px 8px;}
+#controls button{background:#ddd;}
+#controls label{margin:0 4px;}
 #screen{width:336px;height:536px;background:#aabac9;}
 #screen.backlit{background:#96e00e;}
 #keyboard text.tc{text-anchor:middle;user-select:none;-webkit-user-select: none;}

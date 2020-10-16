@@ -4,6 +4,8 @@ import * as kbd from './bkit_kbd.js';
 
 const backlightBtn = document.querySelector('#backlightBtn');
 const kbdSelect = document.querySelector('#kbdSelect');
+const radioBtn = document.querySelector('#cycleRadio');
+const batteryBtn = document.querySelector('#cycleBattery');
 const keyboard = document.querySelector('#keyboard');
 const screen = document.querySelector('#screen');
 const screenCtx = screen.getContext('2d');
@@ -24,6 +26,20 @@ function initialize() {
             list.add(c);
         }
         backlightBtn.blur();
+    });
+
+    // Configure radio button (cycle signal strength)
+    radioBtn.addEventListener('click', e => {
+        wasm.cycleRadio();
+        repaintLCD();
+        radioBtn.blur();
+    });
+
+    // Configure battery button (cycle charge level)
+    batteryBtn.addEventListener('click', e => {
+        wasm.cycleBattery();
+        repaintLCD();
+        batteryBtn.blur();
     });
 
     // Configure on-screen keyboard

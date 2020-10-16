@@ -51,6 +51,14 @@ export function lcdClearDirty() {
     wasmExports.lcd_clear_dirty();
 }
 
+export function cycleRadio() {
+    wasmExports.cycle_radio();
+}
+
+export function cycleBattery() {
+    wasmExports.cycle_battery();
+}
+
 export function keydown(keyCode) {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     let kci = KeyCodeIndex[keyCode];
