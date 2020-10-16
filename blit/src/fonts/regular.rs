@@ -9,6 +9,7 @@ pub fn get_glyph_pattern_offset(c: char) -> usize {
         0x152..=0x153 => LATIN_EXTENDED_A[(c as usize) - 0x152] as usize,
         0x2018..=0x2022 => GENERAL_PUNCTUATION[(c as usize) - 0x2018] as usize,
         0x20AC..=0x20AC => CURRENCY_SYMBOLS[(c as usize) - 0x20AC] as usize,
+        0xE700..=0xE70C => PRIVATE_USE_AREA[(c as usize) - 0xE700] as usize,
         _ => SPECIALS[(0xFFFD as usize) - 0xFFFD] as usize,
     }
 }
@@ -238,9 +239,26 @@ const CURRENCY_SYMBOLS: [u16; 1] = [
     1390, // '€'
 ];
 
+// Index to Unicode Private Use Area block glyph patterns (UI sprites)
+const PRIVATE_USE_AREA: [u16; 13] = [
+    1399, // Battery_05
+    1409, // Battery_25
+    1419, // Battery_50
+    1429, // Battery_75
+    1439, // Battery_99
+    1449, // Radio_3
+    1462, // Radio_2
+    1475, // Radio_1
+    1488, // Radio_0
+    1501, // Radio_Off
+    1514, // Shift_Arrow
+    1522, // Backspace_Symbol
+    1538, // Enter_Symbol
+];
+
 // Index to Unicode Specials block glyph patterns
 const SPECIALS: [u16; 1] = [
-    1399, // '�'
+    1550, // '�'
 ];
 
 /// Maximum height of glyph patterns in this bitmap typeface.
@@ -257,7 +275,7 @@ pub const MAX_HEIGHT: u8 = 30;
 ///  h: Height of pattern in pixels
 ///  yOffset: Vertical offset (pixels downward from top of line) to position
 ///     glyph pattern properly relative to text baseline
-pub const DATA: [u32; 1412] = [
+pub const DATA: [u32; 1563] = [
     // [0]: 20 ' '
     0x0004020e, 0x00000000,
     // [2]: 21 '!'
@@ -720,7 +738,45 @@ pub const DATA: [u32; 1412] = [
     // [1390]: 20AC '€'
     0x00101008, 0x03fc03fc, 0x0c030c03, 0x30003000, 0xfff0fff0, 0x30003000, 0xfff0fff0, 0x0c030c03,
     0x03fc03fc,
-    // [1399]: FFFD '�'
+    // [1399]: E700 Battery_05
+    0x00180c0c, 0x7ffffc80, 0x0002b000, 0x02b00003, 0xb00003b0, 0x0003b000, 0x03b00003, 0xb00003b0,
+    0x00028000, 0x027ffffc,
+    // [1409]: E701 Battery_25
+    0x00180c0c, 0x7ffffc80, 0x0002be00, 0x02be0003, 0xbe0003be, 0x0003be00, 0x03be0003, 0xbe0003be,
+    0x00028000, 0x027ffffc,
+    // [1419]: E702 Battery_50
+    0x00180c0c, 0x7ffffc80, 0x0002bff0, 0x02bff003, 0xbff003bf, 0xf003bff0, 0x03bff003, 0xbff003bf,
+    0xf0028000, 0x027ffffc,
+    // [1429]: E703 Battery_75
+    0x00180c0c, 0x7ffffc80, 0x0002bfff, 0x82bfff83, 0xbfff83bf, 0xff83bfff, 0x83bfff83, 0xbfff83bf,
+    0xff828000, 0x027ffffc,
+    // [1439]: E704 Battery_99
+    0x00180c0c, 0x7ffffc80, 0x0002bfff, 0xfabffffb, 0xbffffbbf, 0xfffbbfff, 0xfbbffffb, 0xbffffbbf,
+    0xfffa8000, 0x027ffffc,
+    // [1449]: E705 Radio_3
+    0x00151107, 0x00f8001f, 0xf003e3e0, 0x3c078380, 0x0e387c3b, 0x8ff8e8f1, 0xe20e0380, 0xe10e023e,
+    0x2003f800, 0x38e00082, 0x00008000, 0x0e000020, 0x00000000,
+    // [1462]: E706 Radio_2
+    0x00151107, 0x00000000, 0x00000000, 0x00000000, 0x00007c00, 0x0ff800f1, 0xe00e0380, 0xe10e023e,
+    0x2003f800, 0x38e00082, 0x00008000, 0x0e000020, 0x00000000,
+    // [1475]: E707 Radio_1
+    0x00151107, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x0100003e,
+    0x0003f800, 0x38e00082, 0x00008000, 0x0e000020, 0x00000000,
+    // [1488]: E708 Radio_0
+    0x00151107, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00008000, 0x0e000020, 0x00000000,
+    // [1501]: E709 Radio_Off
+    0x00151107, 0x00f80018, 0x30030060, 0x20008200, 0x0220000a, 0x00002800, 0x02200020, 0x80020200,
+    0x20080200, 0x20200082, 0x00022000, 0x0a000020, 0x00000000,
+    // [1514]: E70A Shift_Arrow
+    0x000a1406, 0x0c0783f1, 0xfefffff0, 0xc0300c03, 0x00c0300c, 0x0300c030, 0x0c0300c0, 0x30000000,
+    // [1522]: E70B Backspace_Symbol
+    0x001a1206, 0x00ffffc0, 0x7ffff038, 0x000c1c00, 0x030e1818, 0xc7070e33, 0x80e70dc0, 0x1f83e003,
+    0xc0f800f0, 0x37007e0c, 0xe039c31c, 0x1c38c386, 0x06307000, 0x0c0e0003, 0x01ffffc0, 0x3ffff000,
+    // [1538]: E70C Enter_Symbol
+    0x00180e08, 0x00000300, 0x00030000, 0x03000003, 0x0c00031c, 0x00033c00, 0x037c0003, 0xffffffff,
+    0xffff7c00, 0x003c0000, 0x1c00000c, 0x00000000,
+    // [1550]: FFFD '�'
     0x00121404, 0x00c00030, 0x003f000f, 0xc00f3c03, 0xcf03ccf0, 0xf33cffcf, 0xfff3fff3, 0xfffcff3f,
     0xff0fffc0, 0xf3c03cf0, 0x03f000fc, 0x000c0003, 0x00000000,
 ];

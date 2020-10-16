@@ -56,8 +56,8 @@ function renderCharMap() {
     for (let k of Object.keys(charMap).sort((a,b) => a-b)) {
         let v = charMap[k];
         let isUISprite = (0xE000 <= k) && (k <= 0xF8FF);
-        if (isUISprite && imgSelect.value != 'img/bold.png') {
-            // Skip sprites for regular.png and small.png
+        if (isUISprite && !['img/bold.png', 'img/regular.png'].includes(imgSelect.value)) {
+            // Skip sprites for small.png
             v.start = null;
             continue;
         }
