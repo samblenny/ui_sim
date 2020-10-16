@@ -1,0 +1,23 @@
+html{-webkit-text-size-adjust:none;font-size:16px;font-family:sans-serif;}
+html,body{min-height:100vh;width:100vw;background:#6A7F77;}
+html,body,div,pre,h1,p,button,label,select,textarea,svg{margin:0;padding:0;box-sizing:border-box;}
+body,div,pre,h1,p,button,select,textarea{font-size:inherit;color:inherit;}
+p{margin:0.3em 10px;}
+header{grid-area:H;color:#ddd;padding-left:20px;}
+#canvas{grid-area:C;background:#fff;fill:#fff;}
+#preOut{grid-area:P;background:#fff;padding:10px;font-size:14px;overflow:auto;line-height:14px;}
+#preOut2{grid-area:Q;background:#fff;padding:10px;font-size:14px;line-height:14px;}
+body{display:grid;
+ grid:". . . . ." 20px
+      ". C . H ." 150px
+      ". C . . ." 15px
+      ". C . P ." minmax(170px,auto)
+      ". . . . ." 15px
+      ". Q Q Q ." minmax(170px,auto)
+      ". . . . ." 20px
+      / minmax(10px,1fr) auto 15px minmax(400px,auto) minmax(10px,1fr);}
+header h1{font-size:1.5em;color:#ddd;}
+header label{}
+header select{padding:4px;border-radius:6px;border:2px solid #999;
+    font-size:15px;background:#ccc;color:black;}
+.hide{display:none;}

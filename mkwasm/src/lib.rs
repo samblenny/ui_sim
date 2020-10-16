@@ -1,4 +1,5 @@
 #![no_std]
+extern crate blit;
 extern crate kbd;
 extern crate trace;
 
@@ -8,14 +9,63 @@ extern crate trace;
 #[cfg(target_arch = "wasm32")]
 pub mod no_std_bindings;
 
-/// Buffers for IPC with javascript using pointer into wasm shared memory
-const MAX_CHARS: usize = 20;
-const CHAR_BUF_SIZE: usize = MAX_CHARS;
-const UTF8_BUF_SIZE: usize = MAX_CHARS * 4;
-static mut CHAR_BUF: [char; CHAR_BUF_SIZE] = ['\0'; CHAR_BUF_SIZE];
-static mut CHAR_BUF_END: usize = 0;
-pub static mut UTF8_BUF: [u8; UTF8_BUF_SIZE] = [0; UTF8_BUF_SIZE];
-pub static mut UTF8_BUF_END: usize = 0;
+mod gui_rom;
+mod state;
+
+/// Initialize the hardware (splash screen, etc.)
+#[no_mangle]
+pub extern "C" fn init() {
+    paint_home_screen();
+}
+
+/// Draw the home screen, incorporating current global state (slots)
+fn paint_home_screen() {
+    unsafe {
+        gui_rom::home_screen(&mut state::LCD_FRAME_BUF);
+    }
+    lcd_set_dirty();
+}
+
+/// Check if lcd frame buffer is dirty: 0=clean, 1=dirty
+#[no_mangle]
+pub extern "C" fn lcd_dirty() -> i32 {
+    unsafe {
+        if state::LCD_DIRTY > 0 {
+            1
+        } else {
+            0
+        }
+    }
+}
+
+/// Mark lcd frame buffer as clean
+#[no_mangle]
+pub extern "C" fn lcd_clear_dirty() {
+    unsafe {
+        state::LCD_DIRTY = 0;
+    }
+}
+
+/// Mark lcd frame buffer as dirty
+fn lcd_set_dirty() {
+    unsafe {
+        state::LCD_DIRTY = 1;
+    }
+}
+
+/// Respond to a cyle radio event (intended for UI demonstration)
+#[no_mangle]
+pub extern "C" fn cycle_radio() {
+    state::status::cycle_radio();
+    paint_home_screen();
+}
+
+/// Respond to a cyle radio event (intended for UI demonstration)
+#[no_mangle]
+pub extern "C" fn cycle_battery() {
+    state::status::cycle_battery();
+    paint_home_screen();
+}
 
 /// Respond to key press event
 #[no_mangle]
@@ -25,38 +75,28 @@ pub extern "C" fn keydown(key_index: i32) {
         return;
     }
     let result = &kbd::cur_map_lut()[key_index as usize];
+    let mut dirty = false;
     match result {
-        kbd::R::C(c) => buffer_keystroke(*c),
-        kbd::R::AltL => kbd::modkey_down(result),
-        kbd::R::AltR => kbd::modkey_down(result),
-        kbd::R::Shift => kbd::modkey_down(result),
+        kbd::R::C(c) => {
+            state::home::buffer_keystroke(*c);
+            dirty = true;
+        }
+        kbd::R::AltL => {
+            kbd::modkey_down(result);
+            dirty = true;
+        }
+        kbd::R::AltR => {
+            kbd::modkey_down(result);
+            dirty = true;
+        }
+        kbd::R::Shift => {
+            kbd::modkey_down(result);
+            dirty = true;
+        }
         _ => (),
     }
-}
-
-/// Accumulate buffer of recently typed characters
-fn buffer_keystroke(c: char) {
-    unsafe {
-        // Update the character buffer
-        if CHAR_BUF_END < CHAR_BUF_SIZE {
-            // Append character when character buffer is not yet full
-            CHAR_BUF[CHAR_BUF_END] = c;
-            CHAR_BUF_END += 1;
-        } else {
-            // When buffer is full, discard oldest, then append
-            for i in 0..CHAR_BUF_SIZE - 1 {
-                CHAR_BUF[i] = CHAR_BUF[i + 1];
-            }
-            CHAR_BUF[CHAR_BUF_SIZE - 1] = c;
-        }
-        // Encode the character buffer as utf-8 into the utf8 buffer
-        let mut end = 0;
-        for c in CHAR_BUF[0..CHAR_BUF_END].iter() {
-            let dest = &mut UTF8_BUF[end..end + 4];
-            let result = c.encode_utf8(dest);
-            end += result.len();
-        }
-        UTF8_BUF_END = end;
+    if dirty {
+        paint_home_screen();
     }
 }
 
@@ -77,6 +117,7 @@ pub extern "C" fn key_map_index() -> i32 {
 pub extern "C" fn set_layout_azerty() {
     kbd::set_layout(kbd::Layout::Azerty);
     kbd::set_modkey(kbd::ModKey::Base);
+    paint_home_screen();
 }
 
 /// Substitute for using (non-existant) menu to select qwerty keyboard layout
@@ -84,6 +125,7 @@ pub extern "C" fn set_layout_azerty() {
 pub extern "C" fn set_layout_qwerty() {
     kbd::set_layout(kbd::Layout::Qwerty);
     kbd::set_modkey(kbd::ModKey::Base);
+    paint_home_screen();
 }
 
 #[cfg(test)]

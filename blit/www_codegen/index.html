@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>type</title><link rel="preload" href="type.css" as="style">
+<link href="type.css" rel="stylesheet"></head><body>
+<header>
+ <h1>type</h1>
+ <p>
+  <label for="imgSelect">bitmap:</label>
+   <select name="imgSelect" id="imgSelect">
+     <option value="img/bold.png">bold.png</option>
+     <option value="img/regular.png">regular.png</option>
+     <option value="img/small.png">small.png</option>
+   </select>
+ </p>
+ <br>
+ <p>Click in the grid</p>
+</header>
+
+<canvas id="canvas"></canvas>
+
+<pre id="preOut"></pre>
+
+<pre id="preOut2"></pre>
+
+<div class="hide">
+<img id="bitmap" src="img/bold.png">
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

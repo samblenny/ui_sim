@@ -26,13 +26,7 @@ export function loadModule(callback) {
 
 // Bindings for shared memory and functions
 var wasmShared;
-var wasmUtf8Buf;
-var wasmUtf8BufEnd;
-var wasmKeyup;
-var wasmKeydown;
-var wasmKeyMapIndex;
-var wasmSetLayoutAzerty;
-var wasmSetLayoutQwerty;
+var wasmExports;
 var wasmInstanceReady = false;
 
 // UTF8 decoder
@@ -40,23 +34,36 @@ let decoder = new TextDecoder();
 
 // Callback to initialize shared memory IPC bindings once WASM module is instantiated
 function initSharedMemBindings(result) {
-    let exports = result.instance.exports;
-    wasmShared = new Uint8Array(exports.memory.buffer);
-    wasmUtf8Buf = exports.utf8_buf_ptr();
-    wasmUtf8BufEnd = exports.utf8_buf_end;
-    wasmKeyup = exports.keyup;
-    wasmKeydown = exports.keydown;
-    wasmKeyMapIndex = exports.key_map_index;
-    wasmSetLayoutAzerty = exports.set_layout_azerty;
-    wasmSetLayoutQwerty = exports.set_layout_qwerty;
+    wasmExports = result.instance.exports;
+    wasmShared = new Uint8Array(wasmExports.memory.buffer);
     wasmInstanceReady = true;
+}
+
+export function init() {
+    wasmExports.init();
+}
+
+export function lcdDirty() {
+    return wasmExports.lcd_dirty();
+}
+
+export function lcdClearDirty() {
+    wasmExports.lcd_clear_dirty();
+}
+
+export function cycleRadio() {
+    wasmExports.cycle_radio();
+}
+
+export function cycleBattery() {
+    wasmExports.cycle_battery();
 }
 
 export function keydown(keyCode) {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     let kci = KeyCodeIndex[keyCode];
     if (kci && kci >= 0) {
-        wasmKeydown(KeyCodeIndex[keyCode]);
+        wasmExports.keydown(KeyCodeIndex[keyCode]);
     }
 }
 
@@ -64,31 +71,36 @@ export function keyup(keyCode) {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
     let kci = KeyCodeIndex[keyCode];
     if (kci && kci >= 0) {
-        wasmKeyup(KeyCodeIndex[keyCode]);
+        wasmExports.keyup(KeyCodeIndex[keyCode]);
     }
 }
 
-export function utf8Buf() {
+export function lcdFrameBuf() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    let utf8Len = wasmUtf8BufEnd();
-    let bytes = wasmShared.subarray(wasmUtf8Buf, wasmUtf8Buf + utf8Len);
-    let utf8Str = decoder.decode(bytes);
-    return utf8Str;
+    let size = wasmExports.lcd_lines() * wasmExports.lcd_words_per_line() * 4;
+    let start = wasmExports.lcd_frame_buf_ptr();
+    let bytes = wasmShared.subarray(start, start + size);
+    return {
+        bytes: bytes,
+        lines: wasmExports.lcd_lines(),
+        wordsPerLine: wasmExports.lcd_words_per_line(),
+        pxPerLine: wasmExports.lcd_px_per_line(),
+    };
 }
 
 export function keyMapIndex() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    return wasmKeyMapIndex();
+    return wasmExports.key_map_index();
 }
 
 export function setLayoutAzerty() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    wasmSetLayoutAzerty();
+    wasmExports.set_layout_azerty();
 }
 
 export function setLayoutQwerty() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    wasmSetLayoutQwerty();
+    wasmExports.set_layout_qwerty();
 }
 
 // Lookup table to translate from keycode to u8
