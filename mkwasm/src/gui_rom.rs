@@ -1,7 +1,9 @@
 extern crate blit;
+use super::state::{home, status};
+use blit::fonts;
+use blit::fonts::{pua, Font};
 
 /// Screen bounds
-#[allow(dead_code)]
 pub const SCREEN_X: usize = 336;
 pub const SCREEN_Y: usize = 536;
 
@@ -23,41 +25,36 @@ pub const MAIN_Y0: usize = STATUS_Y1;
 pub const MAIN_Y1: usize = KBD_Y0;
 
 /// Home screen with status bar, main content box, and keyboard
-pub fn home_screen(
-    mut fb: &mut blit::LcdFB,
-    title: &str,
-    wifi: &str,
-    battery: &str,
-    time: &str,
-    note: &str,
-) {
+pub fn home_screen(mut fb: &mut blit::LcdFB) {
     // Status bar: view title, battery level icon, wifi strength icon, clock
     let yr = blit::YRegion(STATUS_Y0, STATUS_Y1);
     blit::clear_region(&mut fb, yr);
     let mut xr = blit::XRegion(4, blit::LCD_PX_PER_LINE);
-    blit::string_bold_left(&mut fb, xr, yr, title);
+    blit::string_bold_left(&mut fb, xr, yr, unsafe { status::TITLE });
     xr.0 = 33 * 6 - 6;
-    blit::string_bold_left(&mut fb, xr, yr, battery);
+    blit::string_bold_left(&mut fb, xr, yr, status::battery_icon());
     xr.0 = 33 * 7 - 3;
-    blit::string_bold_left(&mut fb, xr, yr, wifi);
+    blit::string_bold_left(&mut fb, xr, yr, status::radio_icon());
     xr.0 = 33 * 8 - 2;
-    blit::string_bold_left(&mut fb, xr, yr, time);
+    blit::string_bold_left(&mut fb, xr, yr, unsafe { status::TIME });
     // Main content area: 2px clear pad, 1px black border, clear fill, note in center
     let mut yr = blit::YRegion(MAIN_Y0, MAIN_Y1);
     blit::outline_region(&mut fb, yr);
     xr.0 = 5;
     yr.0 += 5;
-    blit::string_bold_left(&mut fb, xr, yr, note);
+    blit::string_bold_left(&mut fb, xr, yr, unsafe { home::NOTE });
     yr.0 += blit::fonts::bold::MAX_HEIGHT as usize;
-    blit::string_regular_left(&mut fb, xr, yr, note);
+    blit::string_regular_left(&mut fb, xr, yr, unsafe { home::NOTE });
     yr.0 += blit::fonts::regular::MAX_HEIGHT as usize;
-    blit::string_small_left(&mut fb, xr, yr, note);
-    // Keyboard
-    blank_keyboard(&mut fb, blit::YRegion(KBD_Y0, KBD_Y1));
+    blit::string_small_left(&mut fb, xr, yr, unsafe { home::NOTE });
+    yr.0 += blit::fonts::small::MAX_HEIGHT as usize * 2;
+    blit::string_regular_left(&mut fb, xr, yr, home::buffer());
+    // Onscreen keyboard
+    keyboard(&mut fb, blit::YRegion(KBD_Y0, KBD_Y1));
 }
 
 /// Fill a full width screen region bounded by y0..y1 with a blank keyboard
-fn blank_keyboard(fb: &mut blit::LcdFB, yr: blit::YRegion) {
+fn keyboard(fb: &mut blit::LcdFB, yr: blit::YRegion) {
     if yr.1 - yr.0 != KBD_H || yr.1 > blit::LCD_LINES {
         return;
     }
@@ -95,6 +92,44 @@ fn blank_keyboard(fb: &mut blit::LcdFB, yr: blit::YRegion) {
         blit::line_fill_pattern(fb, y + i, &spacebar_row);
     }
     blit::line_fill_clear(fb, y + KBD_KEY_H);
+    // Add keycap labels
+    keyboard_key_caps(fb, yr);
+}
+
+/// Label key caps for the onscreen keyboard using XOR blit
+fn keyboard_key_caps(fb: &mut blit::LcdFB, mut yr: blit::YRegion) {
+    if yr.1 - yr.0 != KBD_H || yr.1 > blit::LCD_LINES {
+        return;
+    }
+    let y0 = yr.0;
+    let mut xr = blit::XRegion(0, SCREEN_X);
+    let f = Font::new(fonts::GlyphSet::Regular);
+    let lut = kbd::cur_map_lut();
+    for i in 0..KEY_LABEL_XY_LUT.len() {
+        // If this key postion gets an onscreen label...
+        if let KeyL::XY(x, y) = KEY_LABEL_XY_LUT[i] {
+            yr.0 = y0 + y;
+            // And the current key map gives a label for this key
+            // ...then blit the label
+            if let kbd::R::C(c) = lut[i] {
+                let w = blit::char_width(c, f);
+                xr.0 = x - (w >> 1);
+                blit::xor_char(fb, xr, yr, c, f);
+            } else {
+                let label = match lut[i] {
+                    kbd::R::Shift => &"shift",
+                    kbd::R::AltL | kbd::R::AltR => pua::SHIFT_ARROW,
+                    kbd::R::Enter => pua::ENTER_SYMBOL,
+                    kbd::R::Bksp => pua::BACKSPACE_SYMBOL,
+                    _ => &"",
+                };
+                let w = blit::string_width(&label, f);
+                xr.0 = x - (w >> 1);
+                yr.0 = y0 + y;
+                blit::string_regular_left(fb, xr, yr, &label);
+            }
+        }
+    }
 }
 
 /// Draw test patern of stripes
@@ -112,3 +147,78 @@ pub fn stripes(fb: &mut blit::LcdFB) {
         pattern = pattern.rotate_right(1);
     }
 }
+
+/// Holds X,Y coordinate for positioning keycap labels in onscreen keyboard
+enum KeyL {
+    XY(usize, usize),
+    None,
+}
+
+/// Calculate key label positions based on row and column within keyboard.
+/// Includes padding for top, left, and center gutters plus key outlines.
+const fn keypos(col: usize, row: usize) -> KeyL {
+    let mut x = 1 + ((col * KBD_KEY_H) >> 1);
+    if x > 10 {
+        x += 1;
+    }
+    let y = 2 + row * KBD_KEY_H;
+    KeyL::XY(x, y)
+}
+
+/// X,Y coordinates for onscreen keyboard keycap labels
+const KEY_LABEL_XY_LUT: [KeyL; kbd::MAP_SIZE] = [
+    KeyL::None,    // P2 (up)
+    KeyL::None,    // P5 (left)
+    KeyL::None,    // PC (click)
+    KeyL::None,    // P6 (right)
+    keypos(2, 0),  // P3 (F1)
+    keypos(6, 0),  // P4 (F2)
+    KeyL::None,    // P9 (down)
+    keypos(14, 2), // P7 (F3)
+    keypos(16, 2), // P8 (F4)
+    keypos(1, 1),  // P13 Number row
+    keypos(3, 1),  // P14
+    keypos(5, 1),  // P15
+    keypos(7, 1),  // P16
+    keypos(9, 1),  // P17
+    keypos(11, 1), // P18
+    keypos(13, 1), // P19
+    keypos(15, 1), // P20
+    keypos(17, 1), // P21
+    keypos(19, 1), // P22
+    keypos(1, 2),  // P23 Upper letter row
+    keypos(3, 2),  // P24
+    keypos(5, 2),  // P25
+    keypos(7, 2),  // P26
+    keypos(9, 2),  // P27
+    keypos(11, 2), // P28
+    keypos(13, 2), // P29
+    keypos(15, 2), // P30
+    keypos(17, 2), // P31
+    keypos(19, 2), // P32
+    keypos(1, 3),  // P33 Home letter row
+    keypos(3, 3),  // P34
+    keypos(5, 3),  // P35
+    keypos(7, 3),  // P36
+    keypos(9, 3),  // P37
+    keypos(11, 3), // P38
+    keypos(13, 3), // P39
+    keypos(15, 3), // P40
+    keypos(17, 3), // P41
+    keypos(19, 3), // P42
+    keypos(1, 4),  // P43 Lower letter row
+    keypos(3, 4),  // P44
+    keypos(5, 4),  // P45
+    keypos(7, 4),  // P46
+    keypos(9, 4),  // P47
+    keypos(11, 4), // P48
+    keypos(13, 4), // P49
+    keypos(15, 4), // P50
+    keypos(17, 4), // P51
+    keypos(19, 4), // P52
+    keypos(3, 5),  // P53 Bottom row
+    keypos(5, 5),  // P54
+    keypos(10, 5), // P55 (Spacebar)
+    keypos(15, 5), // P56
+    keypos(17, 5), // P57
+];

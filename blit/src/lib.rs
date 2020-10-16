@@ -47,6 +47,16 @@ pub fn string_small_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) 
     }
 }
 
+/// Calculate the width of all glpyhs and padding for a string
+pub fn string_width(s: &str, f: Font) -> usize {
+    let mut w = 0;
+    for c in s.chars() {
+        w += char_width(c, f) + 3;
+    }
+    // Subtle padding math: 3px between chars, 1px at left and right ends
+    w - 1
+}
+
 /// Blit a char with: XOR, align left:xr.0 top:yr.0, pad L:1px R:2px
 /// Precondition: glyph pattern width must be 32px or less
 /// Return: width in pixels of character + padding that were blitted (0 for error)
@@ -117,6 +127,13 @@ pub fn xor_char(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char, f: Font) -> u
     }
     let width_of_blitted_pixels = (x0 + gh.w + 2) - xr.0;
     return width_of_blitted_pixels;
+}
+
+/// Calculate the width of glpyh for a char
+pub fn char_width(c: char, f: Font) -> usize {
+    let gpo = (f.glyph_pattern_offset)(c);
+    let gh = GlyphHeader::new((f.glyph_data)(gpo));
+    gh.w
 }
 
 /// Clear a full width screen region bounded by y0..y1
