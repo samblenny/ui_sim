@@ -1,12 +1,37 @@
 #![no_std]
 
-pub mod blit;
+mod blit;
 mod fonts;
 mod kbd;
-pub mod state;
+mod state;
 mod views;
 
-/// Public API
+/// Public API for wasm32 shared memory
+pub mod api_wasm {
+    use super::{blit, state};
+
+    /// Number of words in the frame buffer for each line of the lcd (for wasm)
+    pub fn lcd_words_per_line() -> usize {
+        blit::LCD_WORDS_PER_LINE
+    }
+
+    /// Number of pixels in each line of the frame buffer (for wasm)
+    pub fn lcd_px_per_line() -> usize {
+        blit::LCD_PX_PER_LINE
+    }
+
+    /// Number of lines in the frame buffer
+    pub fn lcd_lines() -> usize {
+        blit::LCD_LINES
+    }
+
+    /// Pointer to the frame buffer (needed for wasm)
+    pub fn lcd_frame_buf_ptr() -> *const u32 {
+        unsafe { state::lcd::FRAME_BUF.as_ptr() }
+    }
+}
+
+/// Public API for keyboard and screen events
 pub mod api {
     use super::{demo, kbd, state, views};
 

@@ -17,22 +17,21 @@ pub fn panic(_panic_info: &PanicInfo) -> ! {
 }
 
 extern crate gui;
-use gui::{blit, state};
 
 /// Export pointer and size of shared frame buffer for javascript
 #[no_mangle]
 pub unsafe extern "C" fn lcd_words_per_line() -> i32 {
-    blit::LCD_WORDS_PER_LINE as i32
+    gui::api_wasm::lcd_words_per_line() as i32
 }
 #[no_mangle]
 pub unsafe extern "C" fn lcd_px_per_line() -> i32 {
-    blit::LCD_PX_PER_LINE as i32
+    gui::api_wasm::lcd_px_per_line() as i32
 }
 #[no_mangle]
 pub unsafe extern "C" fn lcd_lines() -> i32 {
-    blit::LCD_LINES as i32
+    gui::api_wasm::lcd_lines() as i32
 }
 #[no_mangle]
 pub unsafe extern "C" fn lcd_frame_buf_ptr() -> *const u32 {
-    state::lcd::FRAME_BUF.as_ptr()
+    gui::api_wasm::lcd_frame_buf_ptr()
 }
