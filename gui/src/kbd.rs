@@ -1,8 +1,5 @@
-#![no_std]
 #![allow(dead_code)]
 //! Model keyboard configuration and state
-
-extern crate trace;
 
 pub static mut CUR_LAYOUT: Layout = Layout::Azerty;
 pub static mut CUR_MODKEY: ModKey = ModKey::Base;
@@ -123,7 +120,7 @@ pub fn modkey_down(r: &R) {
                 ModKey::AltRS => modkey = ModKey::AltR,
                 _ => (),
             },
-            _ => trace::log_code(trace::Code::BadModkeyDownR),
+            _ => (),
         },
         Layout::Qwerty => match r {
             // Qwerty only has one Alt mapping, so AltL can turn AltR off and
@@ -143,7 +140,7 @@ pub fn modkey_down(r: &R) {
                 ModKey::Shift => modkey = ModKey::Base,
                 _ => (),
             },
-            _ => trace::log_code(trace::Code::BadModkeyDownR),
+            _ => (),
         },
     }
     unsafe {

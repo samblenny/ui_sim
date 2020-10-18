@@ -5,4 +5,3 @@ authors = ["samblenny"]
 edition = "2018"
 
 [dependencies]
-kbd = { path = "../kbd" }

@@ -1,6 +1,4 @@
-extern crate kbd;
-use super::blit;
-use super::fonts;
+use super::{kbd, blit, fonts};
 use super::fonts::{pua, Font};
 use super::state::{home, status};
 

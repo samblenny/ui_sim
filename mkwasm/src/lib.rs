@@ -1,9 +1,8 @@
 #![no_std]
 extern crate gui;
-extern crate kbd;
 extern crate trace;
 
-use gui::{state, views};
+use gui::{kbd, state, views};
 
 /// For building wasm32 no_std, add panic handler and functions to let
 /// javascript check shared buffer pointers. This panic handler conflicts with

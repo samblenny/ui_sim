@@ -3,23 +3,12 @@
 [[package]]
 name = "gui"
 version = "0.1.0"
-dependencies = [
- "kbd",
-]
-
-[[package]]
-name = "kbd"
-version = "0.1.0"
-dependencies = [
- "trace",
-]
 
 [[package]]
 name = "mkwasm"
 version = "0.1.0"
 dependencies = [
  "gui",
- "kbd",
  "trace",
 ]
 

@@ -13,5 +13,4 @@ lto = true
 
 [dependencies]
 gui = { path = "../gui" }
-kbd = { path = "../kbd" }
 trace = { path = "../trace" }
