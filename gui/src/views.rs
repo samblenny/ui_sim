@@ -1,10 +1,10 @@
-use super::{kbd, blit, fonts, state};
 use super::fonts::{pua, Font};
 use super::state::{home, status};
+use super::{blit, fonts, kbd, state};
 
 /// Screen bounds
-pub const SCREEN_X: usize = 336;
-pub const SCREEN_Y: usize = 536;
+pub const SCREEN_W: usize = blit::LCD_PX_PER_LINE;
+pub const SCREEN_H: usize = blit::LCD_LINES;
 
 /// Status bar height and Y bounds
 pub const STATUS_H: usize = fonts::bold::MAX_HEIGHT as usize;
@@ -14,8 +14,8 @@ pub const STATUS_Y1: usize = STATUS_Y0 + STATUS_H;
 /// Keyboard height and Y bounds
 pub const KBD_KEY_H: usize = 33;
 pub const KBD_H: usize = (KBD_KEY_H * 6) + 1;
-pub const KBD_Y0: usize = SCREEN_Y - KBD_H;
-pub const KBD_Y1: usize = SCREEN_Y;
+pub const KBD_Y0: usize = SCREEN_H - KBD_H;
+pub const KBD_Y1: usize = SCREEN_H;
 
 /// Main content area height and Y bounds
 #[allow(dead_code)]
@@ -26,28 +26,37 @@ pub const MAIN_Y1: usize = KBD_Y0;
 /// Home screen with status bar, main content box, and keyboard
 pub fn home_screen(mut fb: &mut blit::LcdFB) {
     // Status bar: view title, battery level icon, wifi strength icon, clock
-    let yr = blit::YRegion(STATUS_Y0, STATUS_Y1);
-    blit::clear_region(&mut fb, yr);
-    let mut xr = blit::XRegion(4, blit::LCD_PX_PER_LINE);
-    blit::string_bold_left(&mut fb, xr, yr, unsafe { status::TITLE });
-    xr.0 = 33 * 6 - 6;
-    blit::string_bold_left(&mut fb, xr, yr, status::battery_icon());
-    xr.0 = 33 * 7 - 3;
-    blit::string_bold_left(&mut fb, xr, yr, status::radio_icon());
-    xr.0 = 33 * 8 - 2;
-    blit::string_bold_left(&mut fb, xr, yr, unsafe { status::TIME });
+    let mut cr = blit::ClipRegion {
+        x0: 0,
+        x1: SCREEN_W,
+        y0: STATUS_Y0,
+        y1: STATUS_Y1,
+    };
+    blit::clear_region(&mut fb, cr);
+    cr.x0 = 4;
+    blit::string_bold_left(&mut fb, cr, unsafe { status::TITLE });
+    cr.x0 = 33 * 6 - 6;
+    blit::string_bold_left(&mut fb, cr, status::battery_icon());
+    cr.x0 = 33 * 7 - 3;
+    blit::string_bold_left(&mut fb, cr, status::radio_icon());
+    cr.x0 = 33 * 8 - 2;
+    blit::string_bold_left(&mut fb, cr, unsafe { status::TIME });
     // Main content area: 2px clear pad, 1px black border, clear fill, note in center
-    let mut yr = blit::YRegion(MAIN_Y0, MAIN_Y1);
+    let yr = blit::YRegion(MAIN_Y0, MAIN_Y1);
     blit::outline_region(&mut fb, yr);
-    xr.0 = 5;
-    yr.0 += 5;
-    blit::string_bold_left(&mut fb, xr, yr, unsafe { home::NOTE });
-    yr.0 += fonts::bold::MAX_HEIGHT as usize;
-    blit::string_regular_left(&mut fb, xr, yr, unsafe { home::NOTE });
-    yr.0 += fonts::regular::MAX_HEIGHT as usize;
-    blit::string_small_left(&mut fb, xr, yr, unsafe { home::NOTE });
-    yr.0 += fonts::small::MAX_HEIGHT as usize * 2;
-    blit::string_regular_left(&mut fb, xr, yr, home::buffer());
+    let mut cr = blit::ClipRegion {
+        x0: 5,
+        x1: SCREEN_W,
+        y0: yr.0 + 5,
+        y1: MAIN_Y1,
+    };
+    blit::string_bold_left(&mut fb, cr, unsafe { home::NOTE });
+    cr.y0 += fonts::bold::MAX_HEIGHT as usize;
+    blit::string_regular_left(&mut fb, cr, unsafe { home::NOTE });
+    cr.y0 += fonts::regular::MAX_HEIGHT as usize;
+    blit::string_small_left(&mut fb, cr, unsafe { home::NOTE });
+    cr.y0 += fonts::small::MAX_HEIGHT as usize * 2;
+    blit::string_regular_left(&mut fb, cr, home::buffer());
     // Onscreen keyboard
     keyboard(&mut fb, blit::YRegion(KBD_Y0, KBD_Y1));
     state::lcd::set_dirty();
@@ -97,24 +106,29 @@ fn keyboard(fb: &mut blit::LcdFB, yr: blit::YRegion) {
 }
 
 /// Label key caps for the onscreen keyboard using XOR blit
-fn keyboard_key_caps(fb: &mut blit::LcdFB, mut yr: blit::YRegion) {
+fn keyboard_key_caps(fb: &mut blit::LcdFB, yr: blit::YRegion) {
     if yr.1 - yr.0 != KBD_H || yr.1 > blit::LCD_LINES {
         return;
     }
     let y0 = yr.0;
-    let mut xr = blit::XRegion(0, SCREEN_X);
+    let mut cr = blit::ClipRegion {
+        x0: 0,
+        x1: SCREEN_W,
+        y0: yr.0,
+        y1: yr.1,
+    };
     let f = Font::new(fonts::GlyphSet::Regular);
     let lut = kbd::cur_map_lut();
     for i in 0..KEY_LABEL_XY_LUT.len() {
         // If this key postion gets an onscreen label...
         if let KeyL::XY(x, y) = KEY_LABEL_XY_LUT[i] {
-            yr.0 = y0 + y;
+            cr.y0 = y0 + y;
             // And the current key map gives a label for this key
             // ...then blit the label
             if let kbd::R::C(c) = lut[i] {
                 let w = blit::char_width(c, f);
-                xr.0 = x - (w >> 1);
-                blit::xor_char(fb, xr, yr, c, f);
+                cr.x0 = x - (w >> 1);
+                blit::xor_char(fb, cr, c, f);
             } else {
                 let label = match lut[i] {
                     kbd::R::Shift => &"shift",
@@ -124,9 +138,9 @@ fn keyboard_key_caps(fb: &mut blit::LcdFB, mut yr: blit::YRegion) {
                     _ => &"",
                 };
                 let w = blit::string_width(&label, f);
-                xr.0 = x - (w >> 1);
-                yr.0 = y0 + y;
-                blit::string_regular_left(fb, xr, yr, &label);
+                cr.x0 = x - (w >> 1);
+                cr.y0 = y0 + y;
+                blit::string_regular_left(fb, cr, &label);
             }
         }
     }
