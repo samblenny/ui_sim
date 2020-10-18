@@ -82,11 +82,19 @@ pub mod api {
             }
             _ => (),
         }
+        unsafe {
+            views::keyboard_invert_key(&mut state::lcd::FRAME_BUF, key_index as usize);
+        }
     }
 
     /// Handle a key up event
     pub fn keyup(key_index: u32) {
-        let _ = key_index;
+        if key_index >= kbd::MAP_SIZE as u32 {
+            return;
+        }
+        unsafe {
+            views::keyboard_invert_key(&mut state::lcd::FRAME_BUF, key_index as usize);
+        }
     }
 
     /// Change keyboard layout to azerty
@@ -121,11 +129,17 @@ mod demo {
         let fr;
         unsafe {
             fr = FRAME;
-            FRAME = (FRAME + 1) % 191;
+            FRAME = (FRAME + 1) % 171;
         }
         match fr {
-            0..=4 => state::status::cycle_radio(),
-            5..=9 => state::status::cycle_battery(),
+            0..=4 => {
+                state::status::cycle_radio();
+                api::repaint();
+            }
+            5..=9 => {
+                state::status::cycle_battery();
+                api::repaint();
+            }
             10 => api::kbd_set_layout_qwerty(),
             11 => api::keydown(Key::P4 as u32),   // shift (F2)
             12 => api::keyup(Key::P4 as u32),     // shift (F2)
@@ -287,29 +301,8 @@ mod demo {
             168 => api::keyup(Key::P55 as u32),   //
             169 => api::keydown(Key::P55 as u32), //
             170 => api::keyup(Key::P55 as u32),   //
-            171 => api::keydown(Key::P55 as u32), //
-            172 => api::keyup(Key::P55 as u32),   //
-            173 => api::keydown(Key::P55 as u32), //
-            174 => api::keyup(Key::P55 as u32),   //
-            175 => api::keydown(Key::P55 as u32), //
-            176 => api::keyup(Key::P55 as u32),   //
-            177 => api::keydown(Key::P55 as u32), //
-            178 => api::keyup(Key::P55 as u32),   //
-            179 => api::keydown(Key::P55 as u32), //
-            180 => api::keyup(Key::P55 as u32),   //
-            181 => api::keydown(Key::P55 as u32), //
-            182 => api::keyup(Key::P55 as u32),   //
-            183 => api::keydown(Key::P55 as u32), //
-            184 => api::keyup(Key::P55 as u32),   //
-            185 => api::keydown(Key::P55 as u32), //
-            186 => api::keyup(Key::P55 as u32),   //
-            187 => api::keydown(Key::P55 as u32), //
-            188 => api::keyup(Key::P55 as u32),   //
-            189 => api::keydown(Key::P55 as u32), //
-            190 => api::keyup(Key::P55 as u32),   //
             _ => (),
         }
-        api::repaint();
     }
 
     /// Lookup table to translate from keycode to key index

@@ -119,15 +119,15 @@ fn keyboard_key_caps(fb: &mut blit::LcdFB, yr: blit::YRegion) {
     };
     let f = Font::new(fonts::GlyphSet::Regular);
     let lut = kbd::cur_map_lut();
-    for i in 0..KEY_LABEL_XY_LUT.len() {
+    for i in 0..KEY_LABEL_CR_LUT.len() {
         // If this key postion gets an onscreen label...
-        if let KeyL::XY(x, y) = KEY_LABEL_XY_LUT[i] {
-            cr.y0 = y0 + y;
+        if let KeyL::CR(key_cr) = KEY_LABEL_CR_LUT[i] {
+            cr.y0 = y0 + key_cr.y0;
             // And the current key map gives a label for this key
             // ...then blit the label
             if let kbd::R::C(c) = lut[i] {
                 let w = blit::char_width(c, f);
-                cr.x0 = x - (w >> 1);
+                cr.x0 = key_cr.x0 + ((key_cr.x1 - key_cr.x0) >> 1) - (w >> 1);
                 blit::xor_char(fb, cr, c, f);
             } else {
                 let label = match lut[i] {
@@ -138,12 +138,29 @@ fn keyboard_key_caps(fb: &mut blit::LcdFB, yr: blit::YRegion) {
                     _ => &"",
                 };
                 let w = blit::string_width(&label, f);
-                cr.x0 = x - (w >> 1);
-                cr.y0 = y0 + y;
+                cr.x0 = key_cr.x0 + ((key_cr.x1 - key_cr.x0) >> 1) - (w >> 1);
+                cr.y0 = y0 + key_cr.y0;
                 blit::string_regular_left(fb, cr, &label);
             }
         }
     }
+}
+
+/// Invert a key (minus 1px border) to indicate it is pressed
+pub fn keyboard_invert_key(fb: &mut blit::LcdFB, key_index: usize) {
+    if key_index >= kbd::MAP_SIZE {
+        return;
+    }
+    if let KeyL::CR(cr_rel) = KEY_LABEL_CR_LUT[key_index] {
+        let cr = blit::ClipRegion {
+            x0: cr_rel.x0 + 3,
+            x1: cr_rel.x1,
+            y0: KBD_Y0 + cr_rel.y0,
+            y1: KBD_Y0 + cr_rel.y1 - 3,
+        };
+        blit::invert_region(fb, cr);
+    }
+    state::lcd::set_dirty();
 }
 
 /// Draw test patern of stripes
@@ -163,77 +180,86 @@ pub fn stripes(fb: &mut blit::LcdFB) {
     state::lcd::set_dirty();
 }
 
-/// Holds X,Y coordinate for positioning keycap labels in onscreen keyboard
+/// Holds ClipRegion for positioning keycap labels in onscreen keyboard
 enum KeyL {
-    XY(usize, usize),
+    CR(blit::ClipRegion),
     None,
 }
 
 /// Calculate key label positions based on row and column within keyboard.
 /// Includes padding for top, left, and center gutters plus key outlines.
-const fn keypos(col: usize, row: usize) -> KeyL {
-    let mut x = 1 + ((col * KBD_KEY_H) >> 1);
-    if x > 10 {
-        x += 1;
+const fn keypos(col: usize, row: usize, width: usize) -> KeyL {
+    let mut x0 = 1 + (col * KBD_KEY_H);
+    if col >= 5 {
+        x0 += 1;
     }
-    let y = 2 + row * KBD_KEY_H;
-    KeyL::XY(x, y)
+    let mut x1 = x0 + (width * KBD_KEY_H);
+    if col < 5 && col + width > 5 {
+        x1 += 1;
+    }
+    let y0 = 2 + row * KBD_KEY_H;
+    KeyL::CR(blit::ClipRegion {
+        x0,
+        x1,
+        y0,
+        y1: y0 + KBD_KEY_H,
+    })
 }
 
 /// X,Y coordinates for onscreen keyboard keycap labels
-const KEY_LABEL_XY_LUT: [KeyL; kbd::MAP_SIZE] = [
-    KeyL::None,    // P2 (up)
-    KeyL::None,    // P5 (left)
-    KeyL::None,    // PC (click)
-    KeyL::None,    // P6 (right)
-    keypos(2, 0),  // P3 (F1)
-    keypos(6, 0),  // P4 (F2)
-    KeyL::None,    // P9 (down)
-    keypos(14, 2), // P7 (F3)
-    keypos(16, 2), // P8 (F4)
-    keypos(1, 1),  // P13 Number row
-    keypos(3, 1),  // P14
-    keypos(5, 1),  // P15
-    keypos(7, 1),  // P16
-    keypos(9, 1),  // P17
-    keypos(11, 1), // P18
-    keypos(13, 1), // P19
-    keypos(15, 1), // P20
-    keypos(17, 1), // P21
-    keypos(19, 1), // P22
-    keypos(1, 2),  // P23 Upper letter row
-    keypos(3, 2),  // P24
-    keypos(5, 2),  // P25
-    keypos(7, 2),  // P26
-    keypos(9, 2),  // P27
-    keypos(11, 2), // P28
-    keypos(13, 2), // P29
-    keypos(15, 2), // P30
-    keypos(17, 2), // P31
-    keypos(19, 2), // P32
-    keypos(1, 3),  // P33 Home letter row
-    keypos(3, 3),  // P34
-    keypos(5, 3),  // P35
-    keypos(7, 3),  // P36
-    keypos(9, 3),  // P37
-    keypos(11, 3), // P38
-    keypos(13, 3), // P39
-    keypos(15, 3), // P40
-    keypos(17, 3), // P41
-    keypos(19, 3), // P42
-    keypos(1, 4),  // P43 Lower letter row
-    keypos(3, 4),  // P44
-    keypos(5, 4),  // P45
-    keypos(7, 4),  // P46
-    keypos(9, 4),  // P47
-    keypos(11, 4), // P48
-    keypos(13, 4), // P49
-    keypos(15, 4), // P50
-    keypos(17, 4), // P51
-    keypos(19, 4), // P52
-    keypos(3, 5),  // P53 Bottom row
-    keypos(5, 5),  // P54
-    keypos(10, 5), // P55 (Spacebar)
-    keypos(15, 5), // P56
-    keypos(17, 5), // P57
+const KEY_LABEL_CR_LUT: [KeyL; kbd::MAP_SIZE] = [
+    KeyL::None,      // P2 (up)
+    KeyL::None,      // P5 (left)
+    KeyL::None,      // PC (click)
+    KeyL::None,      // P6 (right)
+    keypos(0, 0, 2), // P3 (F1)
+    keypos(2, 0, 2), // P4 (F2)
+    KeyL::None,      // P9 (down)
+    keypos(6, 0, 2), // P7 (F3)
+    keypos(8, 0, 2), // P8 (F4)
+    keypos(0, 1, 1), // P13 Number row
+    keypos(1, 1, 1), // P14
+    keypos(2, 1, 1), // P15
+    keypos(3, 1, 1), // P16
+    keypos(4, 1, 1), // P17
+    keypos(5, 1, 1), // P18
+    keypos(6, 1, 1), // P19
+    keypos(7, 1, 1), // P20
+    keypos(8, 1, 1), // P21
+    keypos(9, 1, 1), // P22
+    keypos(0, 2, 1), // P23 Upper letter row
+    keypos(1, 2, 1), // P24
+    keypos(2, 2, 1), // P25
+    keypos(3, 2, 1), // P26
+    keypos(4, 2, 1), // P27
+    keypos(5, 2, 1), // P28
+    keypos(6, 2, 1), // P29
+    keypos(7, 2, 1), // P30
+    keypos(8, 2, 1), // P31
+    keypos(9, 2, 1), // P32
+    keypos(0, 3, 1), // P33 Home letter row
+    keypos(1, 3, 1), // P34
+    keypos(2, 3, 1), // P35
+    keypos(3, 3, 1), // P36
+    keypos(4, 3, 1), // P37
+    keypos(5, 3, 1), // P38
+    keypos(6, 3, 1), // P39
+    keypos(7, 3, 1), // P40
+    keypos(8, 3, 1), // P41
+    keypos(9, 3, 1), // P42
+    keypos(0, 4, 1), // P43 Lower letter row
+    keypos(1, 4, 1), // P44
+    keypos(2, 4, 1), // P45
+    keypos(3, 4, 1), // P46
+    keypos(4, 4, 1), // P47
+    keypos(5, 4, 1), // P48
+    keypos(6, 4, 1), // P49
+    keypos(7, 4, 1), // P50
+    keypos(8, 4, 1), // P51
+    keypos(9, 4, 1), // P52
+    keypos(1, 5, 1), // P53 Bottom row
+    keypos(2, 5, 1), // P54
+    keypos(3, 5, 4), // P55 (Spacebar)
+    keypos(7, 5, 1), // P56
+    keypos(8, 5, 1), // P57
 ];

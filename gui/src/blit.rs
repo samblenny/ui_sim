@@ -154,14 +154,39 @@ pub fn clear_region(fb: &mut LcdFB, cr: ClipRegion) {
     let dest_low_word = cr.x0 >> 5;
     let dest_high_word = cr.x1 >> 5;
     let px_in_dest_low_word = 32 - (cr.x0 & 0x1f);
-    let px_in_dest_high_word = 32 - (cr.x1 & 0x1f);
+    let px_in_dest_high_word = cr.x1 & 0x1f;
     // Blit it
     for y in cr.y0..cr.y1 {
         let base = y * LCD_WORDS_PER_LINE;
         fb[base + dest_low_word] |= 0xffffffff >> (32 - px_in_dest_low_word);
-        fb[base + dest_high_word] |= 0xffffffff << (32 - px_in_dest_high_word);
-        for w in dest_low_word+1..dest_high_word {
+        for w in dest_low_word + 1..dest_high_word {
             fb[base + w] = 0xffffffff;
+        }
+        if dest_low_word < dest_high_word {
+            fb[base + dest_high_word] |= 0xffffffff << (32 - px_in_dest_high_word);
+        }
+    }
+}
+
+/// Invert a screen region bounded by (cr.x0,cr.y0)..(cr.x0,cr.y1)
+pub fn invert_region(fb: &mut LcdFB, cr: ClipRegion) {
+    if cr.y1 > LCD_LINES || cr.y0 >= cr.y1 || cr.x1 > LCD_PX_PER_LINE || cr.x0 >= cr.x1 {
+        return;
+    }
+    // Calculate word alignment for destination buffer
+    let dest_low_word = cr.x0 >> 5;
+    let dest_high_word = cr.x1 >> 5;
+    let px_in_dest_low_word = 32 - (cr.x0 & 0x1f);
+    let px_in_dest_high_word = cr.x1 & 0x1f;
+    // Blit it
+    for y in cr.y0..cr.y1 {
+        let base = y * LCD_WORDS_PER_LINE;
+        fb[base + dest_low_word] ^= 0xffffffff >> (32 - px_in_dest_low_word);
+        for w in dest_low_word + 1..dest_high_word {
+            fb[base + w] ^= 0xffffffff;
+        }
+        if dest_low_word < dest_high_word {
+            fb[base + dest_high_word] ^= 0xffffffff << (32 - px_in_dest_high_word);
         }
     }
 }

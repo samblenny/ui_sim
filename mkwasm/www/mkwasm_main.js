@@ -80,7 +80,7 @@ function recurringDemoTick() {
     repaintLCD();
     if (demoModeBtn.classList.contains('on')) {
         // Demo mode is on, so keep ticking
-        setTimeout(recurringDemoTick, 100);
+        setTimeout(recurringDemoTick, 200);
     }
 }
 
