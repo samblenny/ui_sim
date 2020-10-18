@@ -1,5 +1,5 @@
-extern crate blit;
-use blit::fonts;
+use super::blit;
+use super::fonts;
 
 /// Frame buffer for sharing LCD state between javascript and wasm
 pub static mut LCD_FRAME_BUF: blit::LcdFB = [0; blit::LCD_FRAME_BUF_SIZE];

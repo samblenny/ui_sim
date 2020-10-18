@@ -12,6 +12,6 @@ incremental = false
 lto = true
 
 [dependencies]
-blit = { path = "../blit" }
+gui = { path = "../gui" }
 kbd = { path = "../kbd" }
 trace = { path = "../trace" }

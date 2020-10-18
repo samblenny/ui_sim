@@ -16,7 +16,8 @@ pub fn panic(_panic_info: &PanicInfo) -> ! {
     }
 }
 
-extern crate blit;
+extern crate gui;
+use gui::{blit, state};
 
 /// Export pointer and size of shared frame buffer for javascript
 #[no_mangle]
@@ -33,5 +34,5 @@ pub unsafe extern "C" fn lcd_lines() -> i32 {
 }
 #[no_mangle]
 pub unsafe extern "C" fn lcd_frame_buf_ptr() -> *const u32 {
-    super::state::LCD_FRAME_BUF.as_ptr()
+    state::LCD_FRAME_BUF.as_ptr()
 }

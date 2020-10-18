@@ -1,7 +1,5 @@
-#![no_std]
-
-pub mod fonts;
-use fonts::{Font, GlyphHeader};
+use super::fonts;
+use super::fonts::{Font, GlyphHeader};
 
 /// LCD Frame buffer bounds
 pub const LCD_WORDS_PER_LINE: usize = 11;

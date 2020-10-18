@@ -1,14 +1,15 @@
-extern crate blit;
+extern crate kbd;
+use super::blit;
+use super::fonts;
+use super::fonts::{pua, Font};
 use super::state::{home, status};
-use blit::fonts;
-use blit::fonts::{pua, Font};
 
 /// Screen bounds
 pub const SCREEN_X: usize = 336;
 pub const SCREEN_Y: usize = 536;
 
 /// Status bar height and Y bounds
-pub const STATUS_H: usize = blit::fonts::bold::MAX_HEIGHT as usize;
+pub const STATUS_H: usize = fonts::bold::MAX_HEIGHT as usize;
 pub const STATUS_Y0: usize = 0;
 pub const STATUS_Y1: usize = STATUS_Y0 + STATUS_H;
 
@@ -43,11 +44,11 @@ pub fn home_screen(mut fb: &mut blit::LcdFB) {
     xr.0 = 5;
     yr.0 += 5;
     blit::string_bold_left(&mut fb, xr, yr, unsafe { home::NOTE });
-    yr.0 += blit::fonts::bold::MAX_HEIGHT as usize;
+    yr.0 += fonts::bold::MAX_HEIGHT as usize;
     blit::string_regular_left(&mut fb, xr, yr, unsafe { home::NOTE });
-    yr.0 += blit::fonts::regular::MAX_HEIGHT as usize;
+    yr.0 += fonts::regular::MAX_HEIGHT as usize;
     blit::string_small_left(&mut fb, xr, yr, unsafe { home::NOTE });
-    yr.0 += blit::fonts::small::MAX_HEIGHT as usize * 2;
+    yr.0 += fonts::small::MAX_HEIGHT as usize * 2;
     blit::string_regular_left(&mut fb, xr, yr, home::buffer());
     // Onscreen keyboard
     keyboard(&mut fb, blit::YRegion(KBD_Y0, KBD_Y1));

@@ -1,16 +1,15 @@
 #![no_std]
-extern crate blit;
+extern crate gui;
 extern crate kbd;
 extern crate trace;
+
+use gui::{state, views};
 
 /// For building wasm32 no_std, add panic handler and functions to let
 /// javascript check shared buffer pointers. This panic handler conflicts with
 /// test panic handler and therefore cannot be included during `cargo test`.
 #[cfg(target_arch = "wasm32")]
 pub mod no_std_bindings;
-
-mod gui_rom;
-mod state;
 
 /// Initialize the hardware (splash screen, etc.)
 #[no_mangle]
@@ -21,7 +20,7 @@ pub extern "C" fn init() {
 /// Draw the home screen, incorporating current global state (slots)
 fn paint_home_screen() {
     unsafe {
-        gui_rom::home_screen(&mut state::LCD_FRAME_BUF);
+        views::home_screen(&mut state::LCD_FRAME_BUF);
     }
     lcd_set_dirty();
 }
