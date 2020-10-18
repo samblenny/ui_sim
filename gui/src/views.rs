@@ -1,4 +1,4 @@
-use super::{kbd, blit, fonts};
+use super::{kbd, blit, fonts, state};
 use super::fonts::{pua, Font};
 use super::state::{home, status};
 
@@ -50,6 +50,7 @@ pub fn home_screen(mut fb: &mut blit::LcdFB) {
     blit::string_regular_left(&mut fb, xr, yr, home::buffer());
     // Onscreen keyboard
     keyboard(&mut fb, blit::YRegion(KBD_Y0, KBD_Y1));
+    state::lcd::set_dirty();
 }
 
 /// Fill a full width screen region bounded by y0..y1 with a blank keyboard
@@ -145,6 +146,7 @@ pub fn stripes(fb: &mut blit::LcdFB) {
         i += 1;
         pattern = pattern.rotate_right(1);
     }
+    state::lcd::set_dirty();
 }
 
 /// Holds X,Y coordinate for positioning keycap labels in onscreen keyboard

@@ -20,6 +20,7 @@ header h1{display:inline-block;font-size:1.5em;margin-left:2px;margin-right:auto
     font-size:15px;background:#ccc;color:black;}
 #controls button{margin:0 13px;padding:4px 8px;}
 #controls button{background:#ddd;}
+#controls button.on{background:#96e00e;}
 #controls label{margin:0 4px;}
 #screen{width:336px;height:536px;background:#aabac9;}
 #screen.backlit{background:#96e00e;}

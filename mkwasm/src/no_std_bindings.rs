@@ -34,5 +34,5 @@ pub unsafe extern "C" fn lcd_lines() -> i32 {
 }
 #[no_mangle]
 pub unsafe extern "C" fn lcd_frame_buf_ptr() -> *const u32 {
-    state::LCD_FRAME_BUF.as_ptr()
+    state::lcd::FRAME_BUF.as_ptr()
 }

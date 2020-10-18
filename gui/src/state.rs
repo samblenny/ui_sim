@@ -1,9 +1,32 @@
 use super::blit;
 use super::fonts;
 
-/// Frame buffer for sharing LCD state between javascript and wasm
-pub static mut LCD_FRAME_BUF: blit::LcdFB = [0; blit::LCD_FRAME_BUF_SIZE];
-pub static mut LCD_DIRTY: u32 = 0;
+/// Frame buffer for LCD pixel data
+pub mod lcd {
+    use super::blit;
+
+    pub static mut FRAME_BUF: blit::LcdFB = [0; blit::LCD_FRAME_BUF_SIZE];
+    pub static mut DIRTY: u32 = 0;
+
+    /// Mark frame buffer as dirty (needs repaint)
+    pub fn set_dirty() {
+        unsafe {
+            DIRTY = 1;
+        }
+    }
+
+    /// Mark frame buffer as clean (does not need repaint)
+    pub fn clear_dirty() {
+        unsafe {
+            DIRTY = 0;
+        }
+    }
+
+    /// Return non-zero if the frame buffer needs a repaint
+    pub fn dirty() -> u32 {
+        unsafe { DIRTY }
+    }
+}
 
 /// Status bar state
 pub mod status {
