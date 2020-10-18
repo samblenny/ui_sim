@@ -4,8 +4,7 @@ import * as kbd from './bkit_kbd.js';
 
 const backlightBtn = document.querySelector('#backlightBtn');
 const kbdSelect = document.querySelector('#kbdSelect');
-const radioBtn = document.querySelector('#cycleRadio');
-const batteryBtn = document.querySelector('#cycleBattery');
+const demoModeBtn = document.querySelector('#demoMode');
 const keyboard = document.querySelector('#keyboard');
 const screen = document.querySelector('#screen');
 const screenCtx = screen.getContext('2d');
@@ -28,18 +27,19 @@ function initialize() {
         backlightBtn.blur();
     });
 
-    // Configure radio button (cycle signal strength)
-    radioBtn.addEventListener('click', e => {
-        wasm.cycleRadio();
-        repaintLCD();
-        radioBtn.blur();
-    });
-
-    // Configure battery button (cycle charge level)
-    batteryBtn.addEventListener('click', e => {
-        wasm.cycleBattery();
-        repaintLCD();
-        batteryBtn.blur();
+    // Configure demo tick button (cycle demo animation)
+    demoModeBtn.addEventListener('click', e => {
+        if (demoModeBtn.classList.contains('on')) {
+            demoModeBtn.classList.remove('on');
+        } else {
+            demoModeBtn.classList.add('on');
+            kbdSelect.value = 'Qwerty';
+            kbd.showQwertyOSK(keyboard);
+            wasm.setLayoutQwerty();
+            repaintLCD();
+            recurringDemoTick();
+        }
+        demoModeBtn.blur();
     });
 
     // Configure on-screen keyboard
@@ -49,6 +49,7 @@ function initialize() {
     };
     let releaseFn = sc => {
         wasm.keyup(sc);
+        repaintLCD();
     };
     kbd.setKeyscanCallbacks(pressFn, releaseFn);
     kbd.addKeyboardListener(document);
@@ -71,6 +72,16 @@ function initialize() {
     screen.width = 336;
     wasm.init();
     repaintLCD();
+}
+
+// Send a demo tick event and conditionally schedule the next one
+function recurringDemoTick() {
+    wasm.demoTick();
+    repaintLCD();
+    if (demoModeBtn.classList.contains('on')) {
+        // Demo mode is on, so keep ticking
+        setTimeout(recurringDemoTick, 200);
+    }
 }
 
 // Paint the frame buffer (wasm shared memory) to the screen (canvas element)

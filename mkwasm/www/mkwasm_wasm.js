@@ -51,12 +51,8 @@ export function lcdClearDirty() {
     wasmExports.lcd_clear_dirty();
 }
 
-export function cycleRadio() {
-    wasmExports.cycle_radio();
-}
-
-export function cycleBattery() {
-    wasmExports.cycle_battery();
+export function demoTick() {
+    wasmExports.demo_tick();
 }
 
 export function keydown(keyCode) {
@@ -86,11 +82,6 @@ export function lcdFrameBuf() {
         wordsPerLine: wasmExports.lcd_words_per_line(),
         pxPerLine: wasmExports.lcd_px_per_line(),
     };
-}
-
-export function keyMapIndex() {
-    if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    return wasmExports.key_map_index();
 }
 
 export function setLayoutAzerty() {

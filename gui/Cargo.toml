@@ -1,8 +1,7 @@
 [package]
-name = "kbd"
+name = "gui"
 version = "0.1.0"
+authors = ["samblenny"]
 edition = "2018"
-publish = false
 
 [dependencies]
-trace = { path = "../trace" }

@@ -1,7 +1,5 @@
-#![no_std]
-
-pub mod fonts;
-use fonts::{Font, GlyphHeader};
+use super::fonts;
+use super::fonts::{Font, GlyphHeader};
 
 /// LCD Frame buffer bounds
 pub const LCD_WORDS_PER_LINE: usize = 11;
@@ -16,34 +14,41 @@ pub type LcdFB = [u32; LCD_FRAME_BUF_SIZE];
 pub type BlitRow = [u32; LCD_WORDS_PER_LINE];
 
 /// For specifying a vertical region contiguous rows in the frame buffer
+/// Range is yr.0..yr.1 (yr.0 included, yr.1 excluded)
 #[derive(Copy, Clone)]
 pub struct YRegion(pub usize, pub usize);
 
-/// For specifiying horizontal bounds within a vertical region
+/// For specifying a region of pixels in the frame buffer
+/// Ranges are x0..x1 and y0..y1 (x0 & y0 are included, x1 & y1 are excluded)
 #[derive(Copy, Clone)]
-pub struct XRegion(pub usize, pub usize);
+pub struct ClipRegion {
+    pub x0: usize,
+    pub x1: usize,
+    pub y0: usize,
+    pub y1: usize,
+}
 
 /// Blit string with: XOR, bold font, align xr left yr top
-pub fn string_bold_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
+pub fn string_bold_left(fb: &mut LcdFB, mut cr: ClipRegion, s: &str) {
     let f = Font::new(fonts::GlyphSet::Bold);
     for c in s.chars() {
-        xr.0 += xor_char(fb, xr, yr, c, f);
+        cr.x0 += xor_char(fb, cr, c, f);
     }
 }
 
 /// Blit string with: XOR, regular font, align xr left yr top
-pub fn string_regular_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
+pub fn string_regular_left(fb: &mut LcdFB, mut cr: ClipRegion, s: &str) {
     let f = Font::new(fonts::GlyphSet::Regular);
     for c in s.chars() {
-        xr.0 += xor_char(fb, xr, yr, c, f);
+        cr.x0 += xor_char(fb, cr, c, f);
     }
 }
 
 /// Blit string with: XOR, small font, align xr left yr top
-pub fn string_small_left(fb: &mut LcdFB, mut xr: XRegion, yr: YRegion, s: &str) {
+pub fn string_small_left(fb: &mut LcdFB, mut cr: ClipRegion, s: &str) {
     let f = Font::new(fonts::GlyphSet::Small);
     for c in s.chars() {
-        xr.0 += xor_char(fb, xr, yr, c, f);
+        cr.x0 += xor_char(fb, cr, c, f);
     }
 }
 
@@ -81,8 +86,8 @@ pub fn string_width(s: &str, f: Font) -> usize {
 /// 1. Fits in word: xr:1..7   => (data[0].bit_30)->(data[0].bit_26), mask:0x7c00_0000
 /// 2. Spans words:  xr:30..36 => (data[0].bit_01)->(data[1].bit_29), mask:[0x0000_0003,0xe000_000]
 ///
-pub fn xor_char(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char, f: Font) -> usize {
-    if yr.1 > LCD_LINES || xr.1 > LCD_PX_PER_LINE || xr.0 >= xr.1 {
+pub fn xor_char(fb: &mut LcdFB, cr: ClipRegion, c: char, f: Font) -> usize {
+    if cr.y1 > LCD_LINES || cr.x1 > LCD_PX_PER_LINE || cr.x0 >= cr.x1 {
         return 0;
     }
     // Look up glyph and unpack its header
@@ -92,15 +97,19 @@ pub fn xor_char(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char, f: Font) -> u
         return 0;
     }
     // Add 1px pad to left
-    let x0 = xr.0 + 1;
+    let x0 = cr.x0 + 1;
     // Calculate word alignment for destination buffer
     let x1 = x0 + gh.w;
     let dest_low_word = x0 >> 5;
     let dest_high_word = x1 >> 5;
     let px_in_dest_low_word = 32 - (x0 & 0x1f);
     // Blit it
-    let y0 = yr.0 + gh.y_offset;
-    let y_max = if (y0 + gh.h) <= yr.1 { gh.h } else { yr.1 - y0 };
+    let y0 = cr.y0 + gh.y_offset;
+    let y_max = if (y0 + gh.h) <= cr.y1 {
+        gh.h
+    } else {
+        cr.y1 - y0
+    };
     for y in 0..y_max {
         // Unpack pixels for this glyph row
         let px_offset = y * gh.w;
@@ -125,7 +134,7 @@ pub fn xor_char(fb: &mut LcdFB, xr: XRegion, yr: YRegion, c: char, f: Font) -> u
             fb[base + dest_high_word] ^= pattern << px_in_dest_low_word;
         }
     }
-    let width_of_blitted_pixels = (x0 + gh.w + 2) - xr.0;
+    let width_of_blitted_pixels = (x0 + gh.w + 2) - cr.x0;
     return width_of_blitted_pixels;
 }
 
@@ -136,17 +145,53 @@ pub fn char_width(c: char, f: Font) -> usize {
     gh.w
 }
 
-/// Clear a full width screen region bounded by y0..y1
-pub fn clear_region(fb: &mut LcdFB, yr: YRegion) {
-    if yr.1 > LCD_LINES || yr.0 >= yr.1 {
+/// Clear a screen region bounded by (cr.x0,cr.y0)..(cr.x0,cr.y1)
+pub fn clear_region(fb: &mut LcdFB, cr: ClipRegion) {
+    if cr.y1 > LCD_LINES || cr.y0 >= cr.y1 || cr.x1 > LCD_PX_PER_LINE || cr.x0 >= cr.x1 {
         return;
     }
-    for y in yr.0..yr.1 {
-        line_fill_clear(fb, y);
+    // Calculate word alignment for destination buffer
+    let dest_low_word = cr.x0 >> 5;
+    let dest_high_word = cr.x1 >> 5;
+    let px_in_dest_low_word = 32 - (cr.x0 & 0x1f);
+    let px_in_dest_high_word = cr.x1 & 0x1f;
+    // Blit it
+    for y in cr.y0..cr.y1 {
+        let base = y * LCD_WORDS_PER_LINE;
+        fb[base + dest_low_word] |= 0xffffffff >> (32 - px_in_dest_low_word);
+        for w in dest_low_word + 1..dest_high_word {
+            fb[base + w] = 0xffffffff;
+        }
+        if dest_low_word < dest_high_word {
+            fb[base + dest_high_word] |= 0xffffffff << (32 - px_in_dest_high_word);
+        }
     }
 }
 
-/// Outline a full width screen region, bounded by y0..y1, with pad and border box
+/// Invert a screen region bounded by (cr.x0,cr.y0)..(cr.x0,cr.y1)
+pub fn invert_region(fb: &mut LcdFB, cr: ClipRegion) {
+    if cr.y1 > LCD_LINES || cr.y0 >= cr.y1 || cr.x1 > LCD_PX_PER_LINE || cr.x0 >= cr.x1 {
+        return;
+    }
+    // Calculate word alignment for destination buffer
+    let dest_low_word = cr.x0 >> 5;
+    let dest_high_word = cr.x1 >> 5;
+    let px_in_dest_low_word = 32 - (cr.x0 & 0x1f);
+    let px_in_dest_high_word = cr.x1 & 0x1f;
+    // Blit it
+    for y in cr.y0..cr.y1 {
+        let base = y * LCD_WORDS_PER_LINE;
+        fb[base + dest_low_word] ^= 0xffffffff >> (32 - px_in_dest_low_word);
+        for w in dest_low_word + 1..dest_high_word {
+            fb[base + w] ^= 0xffffffff;
+        }
+        if dest_low_word < dest_high_word {
+            fb[base + dest_high_word] ^= 0xffffffff << (32 - px_in_dest_high_word);
+        }
+    }
+}
+
+/// Outline a full width screen region with pad and border box
 pub fn outline_region(fb: &mut LcdFB, yr: YRegion) {
     if yr.1 > LCD_LINES || yr.0 + 6 >= yr.1 {
         return;
