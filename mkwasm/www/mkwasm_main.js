@@ -105,7 +105,7 @@ function repaintLCD() {
                 let word = ((b3 >>> 0) << 24) | (b2 << 16) | (b1 << 8) | b0;
                 for (let bit=0; bit<32; bit++) {
                     let pxOffset = (line * lcdData.pxPerLine + w*32 + bit) * 4;
-                    let fbPixel = 1 & (word >> (31-bit))
+                    let fbPixel = 1 & (word >> bit)
                     // Pixel == 1 means clear (takes color of backlit background)
                     // Pixel == 0 means black
                     // To let the white (clear) pixels take the color of the canvas element's
