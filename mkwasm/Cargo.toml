@@ -12,5 +12,5 @@ incremental = false
 lto = true
 
 [dependencies]
-gui = { path = "../gui" }
+guilib = { path = "../guilib" }
 trace = { path = "../trace" }
