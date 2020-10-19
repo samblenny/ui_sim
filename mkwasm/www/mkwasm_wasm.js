@@ -73,14 +73,17 @@ export function keyup(keyCode) {
 
 export function lcdFrameBuf() {
     if (!wasmInstanceReady) {throw "wasm instance is not ready";}
-    let size = wasmExports.lcd_lines() * wasmExports.lcd_words_per_line() * 4;
+    const lcdLines = 536;
+    const lcdWordsPerLine = 11;
+    const lcdPxPerLine = 336;
+    let size = lcdLines * lcdWordsPerLine * 4;
     let start = wasmExports.lcd_frame_buf_ptr();
     let bytes = wasmShared.subarray(start, start + size);
     return {
         bytes: bytes,
-        lines: wasmExports.lcd_lines(),
-        wordsPerLine: wasmExports.lcd_words_per_line(),
-        pxPerLine: wasmExports.lcd_px_per_line(),
+        lines: lcdLines,
+        wordsPerLine: lcdWordsPerLine,
+        pxPerLine: lcdPxPerLine,
     };
 }
 
