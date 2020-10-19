@@ -158,12 +158,12 @@ pub fn clear_region(fb: &mut LcdFB, cr: ClipRegion) {
     // Blit it
     for y in cr.y0..cr.y1 {
         let base = y * LCD_WORDS_PER_LINE;
-        fb[base + dest_low_word] |= 0xffffffff >> (32 - px_in_dest_low_word);
+        fb[base + dest_low_word] |= 0xffffffff << (32 - px_in_dest_low_word);
         for w in dest_low_word + 1..dest_high_word {
             fb[base + w] = 0xffffffff;
         }
         if dest_low_word < dest_high_word {
-            fb[base + dest_high_word] |= 0xffffffff << (32 - px_in_dest_high_word);
+            fb[base + dest_high_word] |= 0xffffffff >> (32 - px_in_dest_high_word);
         }
     }
 }
@@ -181,12 +181,12 @@ pub fn invert_region(fb: &mut LcdFB, cr: ClipRegion) {
     // Blit it
     for y in cr.y0..cr.y1 {
         let base = y * LCD_WORDS_PER_LINE;
-        fb[base + dest_low_word] ^= 0xffffffff >> (32 - px_in_dest_low_word);
+        fb[base + dest_low_word] ^= 0xffffffff << (32 - px_in_dest_low_word);
         for w in dest_low_word + 1..dest_high_word {
             fb[base + w] ^= 0xffffffff;
         }
         if dest_low_word < dest_high_word {
-            fb[base + dest_high_word] ^= 0xffffffff << (32 - px_in_dest_high_word);
+            fb[base + dest_high_word] ^= 0xffffffff >> (32 - px_in_dest_high_word);
         }
     }
 }
@@ -216,7 +216,7 @@ pub fn line_fill_clear(fb: &mut LcdFB, y: usize) {
     for i in 0..=9 {
         fb[base + i] = 0xffff_ffff;
     }
-    fb[base + 10] = 0xffff_0000;
+    fb[base + 10] = 0x0000_ffff;
 }
 
 /// Fill a line of the screen with full-width pattern
@@ -236,11 +236,11 @@ fn line_fill_padded_solid(fb: &mut LcdFB, y: usize) {
         return;
     }
     let base = y * LCD_WORDS_PER_LINE;
-    fb[base] = 0xc000_0000;
+    fb[base] = 0x0000_0003;
     for i in 1..=9 {
         fb[base + i] = 0x0000_0000;
     }
-    fb[base + 10] = 0x0003_0000;
+    fb[base + 10] = 0x0000_c000;
 }
 
 /// Fill a line of the screen with clear, bordered by black, padded with clear
@@ -249,11 +249,11 @@ fn line_fill_padded_border(fb: &mut LcdFB, y: usize) {
         return;
     }
     let base = y * LCD_WORDS_PER_LINE;
-    fb[base] = 0xdfff_ffff;
+    fb[base] = 0xffff_fffb;
     for i in 1..=9 {
         fb[base + i] = 0xffff_ffff;
     }
-    fb[base + 10] = 0xfffb_0000;
+    fb[base + 10] = 0x0000_dfff;
 }
 
 #[cfg(test)]
