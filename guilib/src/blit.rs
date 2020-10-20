@@ -111,27 +111,30 @@ pub fn xor_char(fb: &mut LcdFB, cr: ClipRegion, c: char, f: Font) -> usize {
         cr.y1 - y0
     };
     for y in 0..y_max {
-        // Unpack pixels for this glyph row
+        // Unpack pixels for this glyph row.
+        // px_in_low_word can include some or all of the pixels for this row of
+        // the pattern. It may also include pixels for the next row, or, in the
+        // case of the last row, it may include padding bits.
         let px_offset = y * gh.w;
         let low_word = gpo + 1 + (px_offset >> 5);
         let px_in_low_word = 32 - (px_offset & 0x1f);
         let mut pattern = (f.glyph_data)(low_word);
-        if gh.w <= px_in_low_word {
-            // Low word contains all pixels for this row
-            pattern = pattern >> (px_in_low_word - gh.w);
-            pattern = pattern << (32 - gh.w);
-        } else {
-            // Pixels for this row span two words
-            pattern = pattern << (32 - px_in_low_word);
+        // Mask and align pixels from low word of glyph data array
+        pattern <<= 32 - px_in_low_word;
+        pattern >>= 32 - gh.w;
+        if gh.w > px_in_low_word {
+            // When pixels for this row span two words in the glyph data array,
+            // get pixels from the high word too
             let px_in_high_word = gh.w - px_in_low_word;
-            let pattern_h = (f.glyph_data)(low_word + 1);
-            pattern |= (pattern_h >> (32 - px_in_high_word)) << (32 - gh.w);
+            let mut pattern_h = (f.glyph_data)(low_word + 1);
+            pattern_h >>= 32 - px_in_high_word;
+            pattern |= pattern_h;
         }
         // XOR glyph pixels onto destination buffer
         let base = (y0 + y) * LCD_WORDS_PER_LINE;
-        fb[base + dest_low_word] ^= pattern >> (32 - px_in_dest_low_word);
+        fb[base + dest_low_word] ^= pattern << (32 - px_in_dest_low_word);
         if px_in_dest_low_word < gh.w {
-            fb[base + dest_high_word] ^= pattern << px_in_dest_low_word;
+            fb[base + dest_high_word] ^= pattern >> px_in_dest_low_word;
         }
     }
     let width_of_blitted_pixels = (x0 + gh.w + 2) - cr.x0;
@@ -158,12 +161,12 @@ pub fn clear_region(fb: &mut LcdFB, cr: ClipRegion) {
     // Blit it
     for y in cr.y0..cr.y1 {
         let base = y * LCD_WORDS_PER_LINE;
-        fb[base + dest_low_word] |= 0xffffffff >> (32 - px_in_dest_low_word);
+        fb[base + dest_low_word] |= 0xffffffff << (32 - px_in_dest_low_word);
         for w in dest_low_word + 1..dest_high_word {
             fb[base + w] = 0xffffffff;
         }
         if dest_low_word < dest_high_word {
-            fb[base + dest_high_word] |= 0xffffffff << (32 - px_in_dest_high_word);
+            fb[base + dest_high_word] |= 0xffffffff >> (32 - px_in_dest_high_word);
         }
     }
 }
@@ -181,12 +184,12 @@ pub fn invert_region(fb: &mut LcdFB, cr: ClipRegion) {
     // Blit it
     for y in cr.y0..cr.y1 {
         let base = y * LCD_WORDS_PER_LINE;
-        fb[base + dest_low_word] ^= 0xffffffff >> (32 - px_in_dest_low_word);
+        fb[base + dest_low_word] ^= 0xffffffff << (32 - px_in_dest_low_word);
         for w in dest_low_word + 1..dest_high_word {
             fb[base + w] ^= 0xffffffff;
         }
         if dest_low_word < dest_high_word {
-            fb[base + dest_high_word] ^= 0xffffffff << (32 - px_in_dest_high_word);
+            fb[base + dest_high_word] ^= 0xffffffff >> (32 - px_in_dest_high_word);
         }
     }
 }
@@ -216,7 +219,7 @@ pub fn line_fill_clear(fb: &mut LcdFB, y: usize) {
     for i in 0..=9 {
         fb[base + i] = 0xffff_ffff;
     }
-    fb[base + 10] = 0xffff_0000;
+    fb[base + 10] = 0x0000_ffff;
 }
 
 /// Fill a line of the screen with full-width pattern
@@ -236,11 +239,11 @@ fn line_fill_padded_solid(fb: &mut LcdFB, y: usize) {
         return;
     }
     let base = y * LCD_WORDS_PER_LINE;
-    fb[base] = 0xc000_0000;
+    fb[base] = 0x0000_0003;
     for i in 1..=9 {
         fb[base + i] = 0x0000_0000;
     }
-    fb[base + 10] = 0x0003_0000;
+    fb[base + 10] = 0x0000_c000;
 }
 
 /// Fill a line of the screen with clear, bordered by black, padded with clear
@@ -249,11 +252,11 @@ fn line_fill_padded_border(fb: &mut LcdFB, y: usize) {
         return;
     }
     let base = y * LCD_WORDS_PER_LINE;
-    fb[base] = 0xdfff_ffff;
+    fb[base] = 0xffff_fffb;
     for i in 1..=9 {
         fb[base + i] = 0xffff_ffff;
     }
-    fb[base + 10] = 0xfffb_0000;
+    fb[base + 10] = 0x0000_dfff;
 }
 
 #[cfg(test)]

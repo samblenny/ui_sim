@@ -325,7 +325,7 @@ function convertMatrixToPattern(pxMatrix, yOffset) {
     let flushed = false;
     for (let y=0; y<patH; y++) {
         for (let x=0; x<patW; x++) {
-            bufWord = (bufWord << 1) | (pxMatrix[y][x]>0 ? 1 : 0);
+            bufWord = (bufWord << 1) | (pxMatrix[y][patW-1-x]>0 ? 1 : 0);
             flushed = false;
             if ((y*patW + x) % 32 == 31) {
                 pattern.push(bufWord);

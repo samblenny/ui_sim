@@ -17,7 +17,7 @@ def hexify(bits)
   for i in 0..10
     word = 0;
     for b in 0..31
-      word = (word << 1) | (bits.shift==1 ? 0 : 1)
+      word = (word >> 1) | (bits.shift==1 ? 0 : 0x80000000)
     end
     row.push(word)
   end

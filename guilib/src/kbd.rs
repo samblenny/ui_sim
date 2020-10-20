@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 //! Model keyboard configuration and state
 
-pub static mut CUR_LAYOUT: Layout = Layout::Azerty;
-pub static mut CUR_MODKEY: ModKey = ModKey::Base;
+use super::state;
 
 /// Possible keyboard layouts (relates to labels on physical keys)
 #[derive(Copy, Clone)]
@@ -34,22 +33,16 @@ pub enum Map {
 }
 
 /// Determine current mapping of keystrokes to resulting characters or actions
-pub fn cur_map_enum() -> Map {
-    let layout;
-    let modkey;
-    unsafe {
-        layout = CUR_LAYOUT;
-        modkey = CUR_MODKEY;
-    }
-    match layout {
-        Layout::Azerty => match modkey {
+pub fn cur_map_enum(ctx: &state::Context) -> Map {
+    match ctx.kbd_layout {
+        Layout::Azerty => match ctx.kbd_modkey {
             ModKey::Base => Map::Azerty,
             ModKey::Shift => Map::AzertyS,
             ModKey::AltL => Map::AzertyAltL,
             ModKey::AltR => Map::AzertyAltR,
             ModKey::AltRS => Map::AzertyAltRS,
         },
-        Layout::Qwerty => match modkey {
+        Layout::Qwerty => match ctx.kbd_modkey {
             ModKey::Base => Map::Qwerty,
             ModKey::Shift => Map::QwertyS,
             ModKey::AltL => Map::QwertyAlt,
@@ -60,13 +53,13 @@ pub fn cur_map_enum() -> Map {
 }
 
 /// Return index of current keyboard map for passing to javascript
-pub fn cur_map_index() -> i32 {
-    cur_map_enum() as i32
+pub fn cur_map_index(ctx: &state::Context) -> i32 {
+    cur_map_enum(ctx) as i32
 }
 
 /// Return lookup table of current keyboard map for handling keystroke results
-pub fn cur_map_lut() -> &'static MapResultLUT {
-    match cur_map_enum() {
+pub fn cur_map_lut(ctx: &state::Context) -> &'static MapResultLUT {
+    match cur_map_enum(ctx) {
         Map::Azerty => &MAP_AZERTY_BASE,
         Map::AzertyS => &MAP_AZERTY_SHIFT,
         Map::AzertyAltL => &MAP_AZERTY_ALTL,
@@ -79,45 +72,35 @@ pub fn cur_map_lut() -> &'static MapResultLUT {
 }
 
 /// Change current keyboard layout
-pub fn set_layout(lo: Layout) {
-    unsafe {
-        CUR_LAYOUT = lo;
-    }
+pub fn set_layout(ctx: &mut state::Context, lo: Layout) {
+    ctx.kbd_layout = lo;
 }
 
 /// Change current modifier key state
-pub fn set_modkey(mk: ModKey) {
-    unsafe {
-        CUR_MODKEY = mk;
-    }
+pub fn set_modkey(ctx: &mut state::Context, mk: ModKey) {
+    ctx.kbd_modkey = mk;
 }
 
 /// Handle a modifier key press event
-pub fn modkey_down(r: &R) {
-    let layout;
-    let mut modkey;
-    unsafe {
-        layout = CUR_LAYOUT;
-        modkey = CUR_MODKEY;
-    }
-    match layout {
+pub fn modkey_down(ctx: &mut state::Context, r: &R) {
+    match ctx.kbd_layout {
         Layout::Azerty => match r {
             // Azerty has separate mappings for AltL and AltR
-            R::AltL => match modkey {
-                ModKey::AltL => modkey = ModKey::Base,
-                _ => modkey = ModKey::AltL,
+            R::AltL => match ctx.kbd_modkey {
+                ModKey::AltL => ctx.kbd_modkey = ModKey::Base,
+                _ => ctx.kbd_modkey = ModKey::AltL,
             },
-            R::AltR => match modkey {
-                ModKey::Shift => modkey = ModKey::AltRS,
-                ModKey::AltR => modkey = ModKey::Base,
-                ModKey::AltRS => modkey = ModKey::Shift,
-                _ => modkey = ModKey::AltR,
+            R::AltR => match ctx.kbd_modkey {
+                ModKey::Shift => ctx.kbd_modkey = ModKey::AltRS,
+                ModKey::AltR => ctx.kbd_modkey = ModKey::Base,
+                ModKey::AltRS => ctx.kbd_modkey = ModKey::Shift,
+                _ => ctx.kbd_modkey = ModKey::AltR,
             },
-            R::Shift => match modkey {
-                ModKey::Base => modkey = ModKey::Shift,
-                ModKey::Shift => modkey = ModKey::Base,
-                ModKey::AltR => modkey = ModKey::AltRS,
-                ModKey::AltRS => modkey = ModKey::AltR,
+            R::Shift => match ctx.kbd_modkey {
+                ModKey::Base => ctx.kbd_modkey = ModKey::Shift,
+                ModKey::Shift => ctx.kbd_modkey = ModKey::Base,
+                ModKey::AltR => ctx.kbd_modkey = ModKey::AltRS,
+                ModKey::AltRS => ctx.kbd_modkey = ModKey::AltR,
                 _ => (),
             },
             _ => (),
@@ -125,26 +108,23 @@ pub fn modkey_down(r: &R) {
         Layout::Qwerty => match r {
             // Qwerty only has one Alt mapping, so AltL can turn AltR off and
             // vice versa
-            R::AltL => match modkey {
-                ModKey::Base => modkey = ModKey::AltL,
-                ModKey::Shift => modkey = ModKey::AltL,
-                _ => modkey = ModKey::Base,
+            R::AltL => match ctx.kbd_modkey {
+                ModKey::Base => ctx.kbd_modkey = ModKey::AltL,
+                ModKey::Shift => ctx.kbd_modkey = ModKey::AltL,
+                _ => ctx.kbd_modkey = ModKey::Base,
             },
-            R::AltR => match modkey {
-                ModKey::Base => modkey = ModKey::AltR,
-                ModKey::Shift => modkey = ModKey::AltR,
-                _ => modkey = ModKey::Base,
+            R::AltR => match ctx.kbd_modkey {
+                ModKey::Base => ctx.kbd_modkey = ModKey::AltR,
+                ModKey::Shift => ctx.kbd_modkey = ModKey::AltR,
+                _ => ctx.kbd_modkey = ModKey::Base,
             },
-            R::Shift => match modkey {
-                ModKey::Base => modkey = ModKey::Shift,
-                ModKey::Shift => modkey = ModKey::Base,
+            R::Shift => match ctx.kbd_modkey {
+                ModKey::Base => ctx.kbd_modkey = ModKey::Shift,
+                ModKey::Shift => ctx.kbd_modkey = ModKey::Base,
                 _ => (),
             },
             _ => (),
         },
-    }
-    unsafe {
-        CUR_MODKEY = modkey;
     }
 }
 
